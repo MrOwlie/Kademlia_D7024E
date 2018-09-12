@@ -7,6 +7,8 @@ import (
 	"strings"
 	"regexp"
 	"strconv"
+	"./network"
+	"./kademlia"
 )
 
 
@@ -15,6 +17,7 @@ func main(){
 	args := os.Args[1:]
 	ip := args[0]
 	port := args[1]
+	ownPort := args[2]
 
 	if !validIP4(ip){
 		fmt.Printf("%q is not a valid ip-address, exiting.", ip)
@@ -24,6 +27,13 @@ func main(){
 		fmt.Printf("%q is not a valid port number, exiting.", port)
 		return
 	}
+	if !validPort(ownPort){
+		fmt.Printf("%q is not a valid port number, exiting.", port)
+		return
+	}
+
+	go network.Listen("vad ska va har?", ownPort)
+	go kademlia.GetInstance().Join(ip, port)
 
 	var inp string
 	for{

@@ -1,22 +1,34 @@
-package d7024e
+package routingTable
+
+import (
+	"sync"
+	"../d7024e"
+)
 
 const bucketSize = 20
-
+var instance *routingTable
+var once sync.Once
 
 // RoutingTable definition
 // keeps a refrence contact of me and an array of buckets
-type RoutingTable struct {
+type routingTable struct {
 	me      Contact
 	buckets [IDLength * 8]*bucket
 }
 
+func GetInstance() *routingTable {
+    once.Do(func() {
+        instance = newRoutingTable()
+    })
+    return instance
+}
+
 // NewRoutingTable returns a new instance of a RoutingTable
-func NewRoutingTable(me Contact) *RoutingTable {
-	routingTable := &RoutingTable{}
+func newRoutingTable(me Contact) *routingTable {
+	routingTable := &routingTable{}
 	for i := 0; i < IDLength*8; i++ {
 		routingTable.buckets[i] = newBucket()
 	}
-	routingTable.me = me
 	return routingTable
 }
 
