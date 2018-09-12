@@ -32,23 +32,32 @@ func main(){
 		return
 	}
 
-	go network.Listen("vad ska va har?", ownPort)
-	go kademlia.GetInstance().Join(ip, port)
+	var kadem = kademlia.GetInstance()
 
-	var inp string
+	iOwnPort, _ := strconv.Atoi(ownPort)
+	iPort, _ := strconv.Atoi(port)
+
+	go network.Listen("vad ska va har?", iOwnPort)
+	go kadem.Join(ip, iPort)
+
+	var action, param1 string
 	for{
 
 		fmt.Println("Please enter a command, type '?' for help:")
-		fmt.Scan(&inp)
+		fmt.Scanln(&action, &param1)
 
-		switch inp {
-		case "?":
+		switch {
+		case action == "?":
 			fmt.Println("Available commands:")
 			fmt.Println("\"store 'filepath'\" to store a file.")
 			fmt.Println("\"fetch 'key-value'\" to fetch a file.")
 			fmt.Println("\"exit\" to exit the application.")
-		case "exit":
+		case action == "exit":
 			return
+		case action == "store":
+			fmt.Println("You have chosen store")
+		case action == "fetch":
+			fmt.Println("You have chosen fetch")
 		default:
 			fmt.Println("The command entered is invalid, try again.")
 		}
@@ -68,7 +77,7 @@ func validIP4(ipAddress string) bool {
 }
 
 func validPort(port string) bool{
-	if pa, err := strconv.ParseInt(port,10,64); err == nil && pa > 0 {
+	if pa, err := strconv.Atoi(port); err == nil && pa > 0 {
 		return true
 	}
 	return false

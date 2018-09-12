@@ -27,11 +27,11 @@ func Listen(ip string, port int) {
 	// TODO
 }
 
-func (network *network) SendPingMessage(contact *Contact) {
+func (network *network) SendPingMessage(contact *d7024e.Contact) {
 	// TODO
 }
 
-func (network *network) SendFindContactMessage(contact *Contact) {
+func (network *network) SendFindContactMessage(contact *d7024e.Contact) {
 	// TODO
 }
 

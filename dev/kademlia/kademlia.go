@@ -18,7 +18,7 @@ func GetInstance() *kademlia {
     return instance
 }
 
-func (kademlia *kademlia) LookupContact(target *Contact) {
+func (kademlia *kademlia) LookupContact(target *d7024e.Contact) {
 	// TODO
 }
 
@@ -34,7 +34,7 @@ func (kademlia *kademlia) Join(ip string, port int) {
 	// TODO
 }
 
-func (kademlia *kademlia) ReturnLookupContact(target *Contact) {
+func (kademlia *kademlia) ReturnLookupContact(target *d7024e.Contact) {
 	// TODO
 }
 
