@@ -31,7 +31,7 @@ func (network *network) SendPingMessage(contact *d7024e.Contact) {
 	// TODO
 }
 
-func (network *network) SendFindContactMessage(contact *d7024e.Contact) {
+func (network *network) SendFindContactMessage(contact *d7024e.Contact, toFind *d7024e.KademliaID) {
 	// TODO
 }
 

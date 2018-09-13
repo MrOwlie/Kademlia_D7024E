@@ -1,7 +1,6 @@
 package main
 
 import (
-	//"./d7024e"
 	"os"
 	"fmt"
 	"strings"
@@ -9,6 +8,7 @@ import (
 	"strconv"
 	"./network"
 	"./kademlia"
+	"io/ioutil"
 )
 
 
@@ -55,9 +55,14 @@ func main(){
 		case action == "exit":
 			return
 		case action == "store":
-			fmt.Println("You have chosen store")
+			data, err := ioutil.ReadFile(param1)
+			if err != nil {
+				fmt.Println("An error occured while reading the file!")
+			} else {
+				kadem.Store(data)
+			}
 		case action == "fetch":
-			fmt.Println("You have chosen fetch")
+			kadem.LookupData(param1)
 		default:
 			fmt.Println("The command entered is invalid, try again.")
 		}
