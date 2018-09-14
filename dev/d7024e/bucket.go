@@ -9,21 +9,21 @@ const bucketSize = 20
 
 // bucket definition
 // contains a List
-type bucket struct {
-	list *list.List
+type Bucket struct {
+	list  *list.List
 	mutex sync.Mutex
 }
 
 // newBucket returns a new instance of a bucket
-func newBucket() *bucket {
-	bucket := &bucket{}
+func NewBucket() *Bucket {
+	bucket := &Bucket{}
 	bucket.list = list.New()
 	return bucket
 }
 
 // AddContact adds the Contact to the front of the bucket
 // or moves it to the front of the bucket if it already existed
-func (bucket *bucket) AddContact(contact Contact) {
+func (bucket *Bucket) AddContact(contact Contact) {
 	var element *list.Element
 	bucket.mutex.Lock()
 	defer bucket.mutex.Unlock()
@@ -45,9 +45,9 @@ func (bucket *bucket) AddContact(contact Contact) {
 	}
 }
 
-// GetContactAndCalcDistance returns an array of Contacts where 
+// GetContactAndCalcDistance returns an array of Contacts where
 // the distance has already been calculated
-func (bucket *bucket) GetContactAndCalcDistance(target *KademliaID) []Contact {
+func (bucket *Bucket) GetContactAndCalcDistance(target *KademliaID) []Contact {
 	var contacts []Contact
 	bucket.mutex.Lock()
 	defer bucket.mutex.Unlock()
@@ -62,6 +62,6 @@ func (bucket *bucket) GetContactAndCalcDistance(target *KademliaID) []Contact {
 }
 
 // Len return the size of the bucket
-func (bucket *bucket) Len() int {
+func (bucket *Bucket) Len() int {
 	return bucket.list.Len()
 }

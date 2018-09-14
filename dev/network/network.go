@@ -2,6 +2,7 @@ package network
 
 import (
 	"sync"
+
 	"../d7024e"
 )
 
@@ -13,13 +14,13 @@ var instance *network
 var once sync.Once
 
 func GetInstance() *network {
-    once.Do(func() {
-        instance = &network{}
-    })
-    return instance
+	once.Do(func() {
+		instance = &network{}
+	})
+	return instance
 }
 
-func SetPort(port int){
+func SetPort(port int) {
 	GetInstance().port = port
 }
 

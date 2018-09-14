@@ -2,7 +2,10 @@ package kademlia
 
 import (
 	"sync"
+
 	"../d7024e"
+	"../network"
+	"../routingTable"
 )
 
 type kademlia struct {
@@ -11,15 +14,31 @@ type kademlia struct {
 var instance *kademlia
 var once sync.Once
 
+const alpha int = 3
+const valueK int = 20
+
 func GetInstance() *kademlia {
-    once.Do(func() {
-        instance = &kademlia{}
-    })
-    return instance
+	once.Do(func() {
+		instance = &kademlia{}
+	})
+	return instance
 }
 
 func (kademlia *kademlia) LookupContact(target *d7024e.Contact) {
-	// TODO
+	net := network.GetInstance()
+	rTable := routingTable.GetInstance()
+	candids := &d7024e.ContactCandidates{}
+
+	candids.Append(rTable.FindClosestContacts(target.ID, valueK))
+	candids.Sort()
+
+	//var returnArrays [alpha]*[]d7024e.Contact
+
+	net.SendFindContactMessage(target, target.ID)
+}
+
+func (kademlia *kademlia) lookupAlphaContact(target *d7024e.Contact, list *[]*d7024e.Contact, mutex *sync.Mutex) {
+
 }
 
 func (kademlia *kademlia) LookupData(hash string) {
