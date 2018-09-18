@@ -13,6 +13,7 @@ type kademlia struct {
 
 var instance *kademlia
 var once sync.Once
+var selfContact *d7024e.Contact = d7024e.Contact.NewContact(d7024e.NewRandomKademliaID, "localhost");
 
 const alpha int = 3
 const valueK int = 20
@@ -50,7 +51,8 @@ func (kademlia *kademlia) Store(data []byte) {
 }
 
 func (kademlia *kademlia) Join(ip string, port int) {
-	// TODO
+	// Lookup self on the ip and port of the known node.
+	kademlia.GetInstance.LookupContact(selfContact)
 }
 
 func (kademlia *kademlia) ReturnLookupContact(target *d7024e.Contact) {
