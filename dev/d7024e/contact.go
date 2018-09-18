@@ -50,6 +50,19 @@ func (candidates *ContactCandidates) GetContacts(count int) []Contact {
 	return candidates.contacts[:count]
 }
 
+// GetDistinctContacts returns the first count number of distinct contacts
+func (candidates *ContactCandidates) GetDistinctContacts(count int) []Contact {
+	keys := make(map[string]bool)
+	list := []Contact{}
+	for _, entry := range candidates.contacts {
+		if _, value := keys[entry.Address]; !value {
+			keys[entry.Address] = true
+			list = append(list, entry)
+		}
+	}
+	return list
+}
+
 // Sort the Contacts in ContactCandidates
 func (candidates *ContactCandidates) Sort() {
 	sort.Sort(candidates)
