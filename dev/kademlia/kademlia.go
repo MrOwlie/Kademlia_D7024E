@@ -1,12 +1,16 @@
 package kademlia
 
 import (
+	"encoding/json"
 	"sync"
 
-	"Kademlia_D7024E/dev/d7024e"
-	"Kademlia_D7024E/dev/network"
-	"Kademlia_D7024E/dev/routingTable"
 	"time"
+
+	"../d7024e"
+	"../messageBufferList"
+	"../network"
+	"../routingTable"
+	"../rpc"
 )
 
 type kademlia struct {
@@ -65,7 +69,7 @@ func (kademlia *kademlia) lookupProcedure(procedureType int, target *d7024e.Kade
 					if _, value := queriedAddresses[contact.Address]; !value {
 						ch := make(chan kademliaMessage)
 						chans = append(chans, ch)
-						go kademlia.lookupSubProcedure(procedureType, ch)
+						go kademlia.lookupSubProcedure(contact, target, procedureType, ch)
 						queried = queried + 1
 						queriedAddresses[contact.Address] = true
 					}
@@ -91,7 +95,6 @@ func (kademlia *kademlia) lookupProcedure(procedureType int, target *d7024e.Kade
 						if ok {
 							if x.returnType == returnContacts {
 								candids.Append(x.contacts)
-								close(chans[i])
 							} else if x.returnType == returnHasValue {
 								go kademlia.requestFile(target, x.contacts[0])
 								return
@@ -116,7 +119,6 @@ func (kademlia *kademlia) lookupProcedure(procedureType int, target *d7024e.Kade
 					if ok {
 						if x.returnType == returnContacts {
 							candids.Append(x.contacts)
-							close(chans[i])
 						} else if x.returnType == returnHasValue {
 							go kademlia.requestFile(target, x.contacts[0])
 							return
@@ -149,7 +151,7 @@ func (kademlia *kademlia) lookupProcedure(procedureType int, target *d7024e.Kade
 				if _, value := queriedAddresses[contact.Address]; !value {
 					ch := make(chan kademliaMessage)
 					chans = append(chans, ch)
-					go kademlia.lookupSubProcedure(procedureType, ch)
+					go kademlia.lookupSubProcedure(contact, target, procedureType, ch)
 				}
 			}
 
@@ -163,8 +165,7 @@ func (kademlia *kademlia) lookupProcedure(procedureType int, target *d7024e.Kade
 					case x, ok := <-chans[i]:
 						if ok {
 							if x.returnType == returnContacts {
-								//candids.Append(x.contacts)
-								close(chans[i])
+								candids.Append(x.contacts)
 							} else if x.returnType == returnHasValue {
 								go kademlia.requestFile(target, x.contacts[0])
 								return
@@ -183,26 +184,51 @@ func (kademlia *kademlia) lookupProcedure(procedureType int, target *d7024e.Kade
 
 }
 
-func (kademlia *kademlia) lookupSubProcedure(lookupType int, ch chan<- kademliaMessage) {
+func (kademlia *kademlia) lookupSubProcedure(target d7024e.Contact, toFind *d7024e.KademliaID, lookupType int, ch chan<- kademliaMessage) {
+	//create and add its own messageBuffer to the singleton list
 	net := network.GetInstance()
-	rpcId := d7024e.NewRandomKademliaID()
+	rpcID := d7024e.NewRandomKademliaID()
+	mBuffer := messageBufferList.NewMessageBuffer(rpcID)
+	mBufferList := messageBufferList.GetInstance()
+	mBufferList.AddMessageBuffer(mBuffer)
+
+	//send different messages depending on type
+	if lookupType == procedureContacts {
+		net.SendFindContactMessage(&target, toFind, rpcID)
+	} else if lookupType == procedureValue {
+		net.SendFindDataMessage(&target, toFind, rpcID)
+	}
+
+	//wait until a response is retrieved
+	mBuffer.WaitForResponse()
+	message := mBuffer.ExtractMessage()
+
+	//Return different flags and payload depending on file is found or contacts is returned
+	if message.RpcType == rpc.CLOSEST_NODES {
+		var contacts []d7024e.Contact
+		json.Unmarshal(message.RpcData, contacts)
+		retMessage := kademliaMessage{returnContacts, contacts}
+		ch <- retMessage
+		close(ch)
+	} else if message.RpcType == rpc.HAS_VALUE {
+		//return target so main routine knows which contact has the file
+		contacts := []d7024e.Contact{target}
+		retMessage := kademliaMessage{returnHasValue, contacts}
+		ch <- retMessage
+		close(ch)
+	}
 }
 
 func (kademlia *kademlia) requestFile(file *d7024e.KademliaID, target d7024e.Contact) {
 
 }
 
-func stringInSlice(a string, list []string) bool {
-	for _, b := range list {
-		if b == a {
-			return true
-		}
-	}
-	return false
+func (kademlia *kademlia) LookupContact(target *d7024e.KademliaID) {
+	kademlia.lookupProcedure(procedureContacts, target)
 }
 
-func (kademlia *kademlia) LookupData(hash string) {
-	// TODO
+func (kademlia *kademlia) LookupData(fileHash *d7024e.KademliaID) {
+	kademlia.lookupProcedure(procedureValue, fileHash)
 }
 
 func (kademlia *kademlia) Store(data []byte) {

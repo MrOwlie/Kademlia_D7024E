@@ -1,13 +1,15 @@
 package rpc
 
 import (
-	"Kademlia_D7024E/dev/d7024e"
 	"encoding/json"
+
+	"../d7024e"
 )
 
 const FIND_NODE = "find_node"
 const CLOSEST_NODES = "closest_nodes"
 const FIND_VALUE = "find_value"
+const HAS_VALUE = "find_value"
 const STORE = "store"
 const PING = "ping"
 const PONG = "pong"

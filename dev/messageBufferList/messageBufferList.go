@@ -3,7 +3,7 @@ package messageBufferList
 import (
 	"sync"
 
-	"Kademlia_D7024E/dev/d7024e"
+	"../d7024e"
 )
 
 type messageBufferList struct {

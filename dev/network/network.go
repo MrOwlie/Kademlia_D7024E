@@ -1,15 +1,16 @@
 package network
 
 import (
-	"Kademlia_D7024E/dev/d7024e"
-	"Kademlia_D7024E/dev/messageBufferList"
-	"Kademlia_D7024E/dev/routingTable"
-	"Kademlia_D7024E/dev/rpc"
 	"encoding/json"
 	"fmt"
 	"net"
 	"strconv"
 	"sync"
+
+	"../d7024e"
+	"../messageBufferList"
+	"../routingTable"
+	"../rpc"
 )
 
 const MAX_PACKET_SIZE int = 1 //TODO Calculate real max packet size.
