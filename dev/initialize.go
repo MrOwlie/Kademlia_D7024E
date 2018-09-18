@@ -1,33 +1,32 @@
 package main
 
 import (
-	"os"
+	"Kademlia_D7024E/dev/kademlia"
+	"Kademlia_D7024E/dev/network"
 	"fmt"
-	"strings"
+	"io/ioutil"
+	"os"
 	"regexp"
 	"strconv"
-	"./network"
-	"./kademlia"
-	"io/ioutil"
+	"strings"
 )
 
-
-func main(){
+func main() {
 
 	args := os.Args[1:]
 	ip := args[0]
 	port := args[1]
 	ownPort := args[2]
 
-	if !validIP4(ip){
+	if !validIP4(ip) {
 		fmt.Printf("%q is not a valid ip-address, exiting.", ip)
 		return
 	}
-	if !validPort(port){
+	if !validPort(port) {
 		fmt.Printf("%q is not a valid port number, exiting.", port)
 		return
 	}
-	if !validPort(ownPort){
+	if !validPort(ownPort) {
 		fmt.Printf("%q is not a valid port number, exiting.", port)
 		return
 	}
@@ -41,7 +40,7 @@ func main(){
 	go kadem.Join(ip, iPort)
 
 	var action, param1 string
-	for{
+	for {
 
 		fmt.Println("Please enter a command, type '?' for help:")
 		fmt.Scanln(&action, &param1)
@@ -68,7 +67,6 @@ func main(){
 		}
 	}
 
-	
 }
 
 func validIP4(ipAddress string) bool {
@@ -76,12 +74,12 @@ func validIP4(ipAddress string) bool {
 
 	re, _ := regexp.Compile(`^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$`)
 	if re.MatchString(ipAddress) {
-			return true
+		return true
 	}
 	return false
 }
 
-func validPort(port string) bool{
+func validPort(port string) bool {
 	if pa, err := strconv.Atoi(port); err == nil && pa > 0 {
 		return true
 	}

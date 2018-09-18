@@ -3,7 +3,7 @@ package routingTable
 import (
 	"sync"
 
-	"../d7024e"
+	"Kademlia_D7024E/dev/d7024e"
 )
 
 var instance *routingTable

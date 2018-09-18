@@ -3,12 +3,10 @@ package kademlia
 import (
 	"sync"
 
+	"Kademlia_D7024E/dev/d7024e"
+	"Kademlia_D7024E/dev/network"
+	"Kademlia_D7024E/dev/routingTable"
 	"time"
-
-	"../network"
-
-	"../d7024e"
-	"../routingTable"
 )
 
 type kademlia struct {

@@ -1,10 +1,10 @@
 package messageBufferList
 
 import (
+	"Kademlia_D7024E/dev/d7024e"
+	"Kademlia_D7024E/dev/rpc"
 	"sync"
 	"time"
-
-	"../d7024e"
 )
 
 const messageBufferTimeout = 5
@@ -12,7 +12,7 @@ const messageBufferTimeout = 5
 type messageBuffer struct {
 	RPCID          *d7024e.KademliaID
 	waitGroup      sync.WaitGroup
-	messageList    []string
+	message        rpc.Message
 	latestResponse time.Time
 }
 
@@ -22,19 +22,15 @@ func newMessageBuffer(id *d7024e.KademliaID) *messageBuffer {
 	return mb
 }
 
-func (mb *messageBuffer) appendMessages(messages []string) {
-	for _, element := range messages {
-		mb.messageList = append(mb.messageList, element)
-	}
+func (mb *messageBuffer) AppendMessage(message rpc.Message) {
+	mb.message = message
 	mb.latestResponse = time.Now()
 	mb.waitGroup.Done()
 }
 
-func (mb *messageBuffer) extractMessages() []string {
-	var temp []string
-	copy(temp, mb.messageList)
-	mb.messageList = nil
-	return temp
+func (mb *messageBuffer) extractMessage() (r_message rpc.Message) {
+	r_message = mb.message
+	return
 }
 
 func (mb *messageBuffer) hasExpired() bool {
