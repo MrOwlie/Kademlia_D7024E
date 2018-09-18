@@ -95,7 +95,11 @@ func HandleConnection(conn *net.UDPConn) {
 func HandleFindNode(rpc_id d7024e.KademliaID, find_node rpc.FindNode, conn *net.UDPConn) {
 	rt := routingTable.GetInstance()
 	closest_nodes := rpc.ClosestNodes{rt.FindClosestContacts(&find_node.NodeId, 20)}
-	response := rpc.Marshal(rpc.CLOSEST_NODES, rpc_id, closest_nodes)
+	response, err := rpc.Marshal(rpc.CLOSEST_NODES, rpc_id, closest_nodes)
+
+	if err != nil {
+		fmt.Println(err)
+	}
 
 	conn.Write(response)
 	conn.Close()
@@ -119,73 +123,47 @@ func (network *network) SendPingMessage(contact *d7024e.Contact, rpc_id *d7024e.
 		return
 	}
 
-	laddr, l_err := net.ResolveUDPAddr("udp", network.ip+":"+strconv.Itoa(network.port))
-	raddr, r_err := net.ResolveUDPAddr("udp", contact.Address)
-
-	if l_err != nil || r_err != nil {
-		if l_err != nil {
-			fmt.Println(l_err)
-		} else if l_err != nil {
-			fmt.Println(r_err)
-		}
-		return
-	}
-
-	conn, err := net.DialUDP("udp", laddr, raddr)
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-	conn.Write(data)
+	network.sendMessage(contact.Address, data)
 }
 
 func (network *network) SendFindContactMessage(contact *d7024e.Contact, toFind *d7024e.KademliaID, rpc_id *d7024e.KademliaID) {
-
-	data := rpc.Marshal(rpc.FIND_NODE, *rpc_id, rpc.FindNode{*toFind})
-
-	laddr, l_err := net.ResolveUDPAddr("udp", network.ip+":"+strconv.Itoa(network.port))
-	raddr, r_err := net.ResolveUDPAddr("udp", contact.Address)
-
-	if l_err != nil || r_err != nil {
-		if l_err != nil {
-			fmt.Println(l_err)
-		} else if l_err != nil {
-			fmt.Println(r_err)
-		}
-		return
-	}
-
-	conn, err := net.DialUDP("udp", laddr, raddr)
+	data, err := rpc.Marshal(rpc.FIND_NODE, *rpc_id, rpc.FindNode{*toFind})
 	if err != nil {
 		fmt.Println(err)
-		return
 	}
-	conn.Write(data)
+	network.sendMessage(contact.Address, data)
 }
 
 func (network *network) SendFindDataMessage(contact *d7024e.Contact, toFind *d7024e.KademliaID, rpc_id *d7024e.KademliaID) {
-	data := rpc.Marshal(rpc.FIND_VALUE, *rpc_id, rpc.FindNode{*toFind})
-
-	laddr, l_err := net.ResolveUDPAddr("udp", network.ip+":"+strconv.Itoa(network.port))
-	raddr, r_err := net.ResolveUDPAddr("udp", contact.Address)
-
-	if l_err != nil || r_err != nil {
-		if l_err != nil {
-			fmt.Println(l_err)
-		} else if l_err != nil {
-			fmt.Println(r_err)
-		}
-		return
-	}
-
-	conn, err := net.DialUDP("udp", laddr, raddr)
+	data, err := rpc.Marshal(rpc.FIND_VALUE, *rpc_id, rpc.FindNode{*toFind})
 	if err != nil {
 		fmt.Println(err)
-		return
 	}
-	conn.Write(data)
+	network.sendMessage(contact.Address, data)
 }
 
 func (network *network) SendStoreMessage(data []byte) {
 	// TODO
+}
+
+func (network *network) sendMessage(adress string, data []byte) {
+
+	laddr, l_err := net.ResolveUDPAddr("udp", network.ip+":"+strconv.Itoa(network.port))
+	raddr, r_err := net.ResolveUDPAddr("udp", adress)
+
+	if l_err != nil || r_err != nil {
+		if l_err != nil {
+			fmt.Println(l_err)
+		} else if l_err != nil {
+			fmt.Println(r_err)
+		}
+		return
+	}
+
+	conn, err := net.DialUDP("udp", laddr, raddr)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	conn.Write(data)
 }
