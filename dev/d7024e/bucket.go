@@ -3,15 +3,18 @@ package d7024e
 import (
 	"container/list"
 	"sync"
+	"time"
 )
 
 const bucketSize = 20
+const timeForRefresh = 60
 
 // bucket definition
 // contains a List
 type Bucket struct {
-	list  *list.List
-	mutex sync.Mutex
+	list         *list.List
+	mutex        sync.Mutex
+	latestLookup time.Time
 }
 
 // newBucket returns a new instance of a bucket
@@ -27,6 +30,7 @@ func (bucket *Bucket) AddContact(contact Contact) {
 	var element *list.Element
 	bucket.mutex.Lock()
 	defer bucket.mutex.Unlock()
+	bucket.latestLookup = time.Now()
 
 	for e := bucket.list.Front(); e != nil; e = e.Next() {
 		nodeID := e.Value.(Contact).ID
@@ -51,6 +55,7 @@ func (bucket *Bucket) GetContactAndCalcDistance(target *KademliaID) []Contact {
 	var contacts []Contact
 	bucket.mutex.Lock()
 	defer bucket.mutex.Unlock()
+	bucket.latestLookup = time.Now()
 
 	for elt := bucket.list.Front(); elt != nil; elt = elt.Next() {
 		contact := elt.Value.(Contact)
@@ -64,4 +69,9 @@ func (bucket *Bucket) GetContactAndCalcDistance(target *KademliaID) []Contact {
 // Len return the size of the bucket
 func (bucket *Bucket) Len() int {
 	return bucket.list.Len()
+}
+
+func (bucket *Bucket) NeedsRefresh() bool {
+	elapsed := time.Since(bucket.latestLookup)
+	return (elapsed.Minutes() > timeForRefresh)
 }

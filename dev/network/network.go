@@ -15,6 +15,10 @@ import (
 
 const MAX_PACKET_SIZE int = 512 //TODO Calculate actual max packet size.
 
+type Handler interface {
+	HandleFindNode()
+}
+
 type network struct {
 	port int
 	ip   string
