@@ -53,6 +53,7 @@ func Listen(ip string, port int) {
 		return
 	}
 
+	fmt.Println("Listening to UDP traffic on " + ip + ":" + strconv.Itoa(port))
 	for {
 		var data [MAX_PACKET_SIZE]byte
 		n, addr, err := conn.ReadFromUDP(data[0:])

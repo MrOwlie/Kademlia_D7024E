@@ -19,6 +19,8 @@ type routingTable struct {
 func GetInstance() *routingTable {
 	once.Do(func() {
 		instance = newRoutingTable()
+		instance.me = d7024e.Contact{}
+		instance.me.ID = d7024e.NewRandomKademliaID()
 	})
 	return instance
 }
@@ -82,14 +84,14 @@ func (routingTable *routingTable) getBucketIndex(id *d7024e.KademliaID) int {
 }
 
 //Returns an array of random kademliaIds, where each kademliaID is in the range of a bucket that needs to be refreshed.
-func (routingTable *routingTable) getRefreshIDs() *[]d7024e.KademliaID {
+func (routingTable *routingTable) GetRefreshIDs() []*d7024e.KademliaID {
 
-	var idList []KademliaID
+	var idList []*d7024e.KademliaID
 
 	for i := 0; i < len(routingTable.buckets); i++ {
 		if routingTable.buckets[i].NeedsRefresh() {
 			n_fullBytes := i / 8
-			n_bitsInToByte := i % 8
+			var n_bitsInToByte uint64 = uint64(i % 8)
 			randomId := d7024e.NewRandomKademliaID() //Used to get a random number of correct size
 
 			for j := 0; j < n_fullBytes; j++ {
@@ -104,9 +106,9 @@ func (routingTable *routingTable) getRefreshIDs() *[]d7024e.KademliaID {
 			randomId[n_fullBytes] |= mostSigBit
 
 			kandemliaId := routingTable.me.ID.CalcDistance(randomId)
-			idList = append(idList, *kandemliaId)
+			idList = append(idList, kandemliaId)
 		}
 	}
 
-	return &idList
+	return idList
 }

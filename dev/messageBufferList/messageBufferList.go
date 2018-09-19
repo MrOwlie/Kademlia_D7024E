@@ -59,6 +59,7 @@ func (mbList *messageBufferList) GarbageCollect() {
 	mbList.mutex.Lock()
 	for i := len(mbList.list) - 1; i >= 0; i-- {
 		if mbList.list[i].hasExpired() {
+			mbList.list[i].waitGroup.Done()
 			copy(mbList.list[i:], mbList.list[i+1:])
 			mbList.list[len(mbList.list)-1] = nil // or the zero value of T
 			mbList.list = mbList.list[:len(mbList.list)-1]
