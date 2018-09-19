@@ -35,6 +35,9 @@ const returnHasValue = 4
 func GetInstance() *kademlia {
 	once.Do(func() {
 		instance = &kademlia{}
+		scheduleMessageBufferListGarbageCollect()
+		scheduleIdleBucketReExploration()
+		scheduleFileRepublish()
 	})
 	return instance
 }
