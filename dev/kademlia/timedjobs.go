@@ -27,3 +27,7 @@ func scheduleIdleBucketReExploration() {
 func scheduleFileRepublish() {
 
 }
+
+func scheduleCacheExpiredFileDeletion() {
+
+}
