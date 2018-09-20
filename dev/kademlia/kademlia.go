@@ -7,6 +7,8 @@ import (
 
 	"time"
 
+	"fmt"
+
 	"../d7024e"
 	"../messageBufferList"
 	"../network"
@@ -37,9 +39,16 @@ const returnHasValue = 4
 func GetInstance() *kademlia {
 	once.Do(func() {
 		instance = &kademlia{}
+		fmt.Println("Starting timed jobs")
 		scheduleMessageBufferListGarbageCollect()
+		fmt.Println("RPC timeout garbage collection started!")
 		scheduleIdleBucketReExploration()
+		fmt.Println("Idle bucket re-exploration started!")
 		scheduleFileRepublish()
+		fmt.Println("File republishing started!")
+		scheduleCacheExpiredFileDeletion()
+		fmt.Println("Cache expired file deletion started!")
+		fmt.Println("All timed jobs started successfully!")
 	})
 	return instance
 }
@@ -232,7 +241,8 @@ func (kademlia *kademlia) LookupContact(target *d7024e.KademliaID) {
 	kademlia.lookupProcedure(procedureContacts, target)
 }
 
-func (kademlia *kademlia) LookupData(fileHash *d7024e.KademliaID) {
+func (kademlia *kademlia) LookupData(id string) {
+	fileHash := d7024e.NewKademliaID(id)
 	kademlia.lookupProcedure(procedureValue, fileHash)
 }
 

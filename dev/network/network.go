@@ -15,6 +15,10 @@ import (
 
 const MAX_PACKET_SIZE int = 512 //TODO Calculate actual max packet size.
 
+type Handler interface {
+	HandleFindNode()
+}
+
 type network struct {
 	port int
 	ip   string
@@ -49,6 +53,7 @@ func Listen(ip string, port int) {
 		return
 	}
 
+	fmt.Println("Listening to UDP traffic on " + ip + ":" + strconv.Itoa(port))
 	for {
 		var data [MAX_PACKET_SIZE]byte
 		n, addr, err := conn.ReadFromUDP(data[0:])

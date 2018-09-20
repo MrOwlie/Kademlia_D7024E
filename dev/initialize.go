@@ -1,14 +1,15 @@
 package main
 
 import (
-	"Kademlia_D7024E/dev/kademlia"
-	"Kademlia_D7024E/dev/network"
 	"fmt"
 	"io/ioutil"
 	"os"
 	"regexp"
 	"strconv"
 	"strings"
+
+	"./kademlia"
+	"./network"
 )
 
 func main() {
@@ -27,7 +28,7 @@ func main() {
 		return
 	}
 	if !validPort(ownPort) {
-		fmt.Printf("%q is not a valid port number, exiting.", port)
+		fmt.Printf("%q is not a valid port number, exiting.", ownPort)
 		return
 	}
 
@@ -36,13 +37,13 @@ func main() {
 	iOwnPort, _ := strconv.Atoi(ownPort)
 	iPort, _ := strconv.Atoi(port)
 
-	go network.Listen("vad ska va har?", iOwnPort)
+	go network.Listen("192.168.0.230", iOwnPort)
 	go kadem.Join(ip, iPort)
 
 	var action, param1 string
 	for {
 
-		fmt.Println("Please enter a command, type '?' for help:")
+		fmt.Println("\n\nPlease enter a command, type '?' for help:")
 		fmt.Scanln(&action, &param1)
 
 		switch {
