@@ -2,6 +2,7 @@ package kademlia
 
 import (
 	"encoding/json"
+	"fmt"
 	"sync"
 
 	"time"
@@ -23,7 +24,7 @@ type kademliaMessage struct {
 
 var instance *kademlia
 var once sync.Once
-var selfContact *d7024e.Contact = d7024e.Contact.NewContact(d7024e.NewRandomKademliaID, "localhost");
+var selfContact d7024e.Contact = d7024e.NewContact(d7024e.NewRandomKademliaID(), "localhost")
 
 const alpha int = 3
 const valueK int = 20
@@ -240,8 +241,25 @@ func (kademlia *kademlia) Store(data []byte) {
 }
 
 func (kademlia *kademlia) Join(ip string, port int) {
-	// Lookup self on the ip and port of the known node.
-	kademlia.GetInstance.LookupContact(selfContact)
+	net := network.GetInstance()
+	rpcID := d7024e.NewRandomKademliaID()
+	bootstrapContact := d7024e.NewContact(d7024e.NewRandomKademliaID(), fmt.Sprintf("%s:%d", ip, port))
+	mBuffer := messageBufferList.NewMessageBuffer(rpcID)
+	mBufferList := messageBufferList.GetInstance()
+	mBufferList.AddMessageBuffer(mBuffer)
+
+	net.SendFindContactMessage(&bootstrapContact, selfContact.ID, rpcID)
+
+	//wait until a response is retrieved
+	mBuffer.WaitForResponse()
+	message := mBuffer.ExtractMessage()
+
+	var contacts []d7024e.Contact
+	json.Unmarshal(message.RpcData, contacts)
+	for _, contact := range contacts {
+		routingTable.GetInstance().AddContact(contact)
+	}
+
 }
 
 func (kademlia *kademlia) ReturnLookupContact(target *d7024e.Contact) {
