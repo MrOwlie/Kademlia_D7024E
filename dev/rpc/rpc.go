@@ -30,6 +30,7 @@ type ClosestNodes struct {
 }
 
 func Marshal(rpc_type string, rpc_id d7024e.KademliaID, sender_id d7024e.KademliaID, rpc_data interface{}) ([]byte, error) {
+
 	m_rpc_data, data_err := json.Marshal(rpc_data)
 	if data_err != nil {
 		return []byte{}, data_err

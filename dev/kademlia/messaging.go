@@ -15,7 +15,8 @@ func (kademlia *kademlia) HandleIncomingRPC(data []byte, addr string) {
 	var message rpc.Message = rpc.Message{}
 	unmarshaling_err := json.Unmarshal(data, &message)
 	if unmarshaling_err != nil {
-		fmt.Println(unmarshaling_err)
+		st := string(data)
+		fmt.Println(st, unmarshaling_err)
 	}
 
 	//Update contact
@@ -54,7 +55,7 @@ func (kademlia *kademlia) handleFindNode(rpc_id d7024e.KademliaID, find_node rpc
 		fmt.Println(err)
 	}
 
-	network.GetInstance().SendMessage(addr, response)
+	network.GetInstance().SendMessage(addr, &response)
 }
 
 func (kademlia *kademlia) handlePing(rpc_id d7024e.KademliaID, addr string) {
@@ -64,7 +65,7 @@ func (kademlia *kademlia) handlePing(rpc_id d7024e.KademliaID, addr string) {
 		return
 	}
 
-	network.GetInstance().SendMessage(addr, response)
+	network.GetInstance().SendMessage(addr, &response)
 }
 
 func (kademlia *kademlia) sendPingMessage(contact *d7024e.Contact, rpc_id *d7024e.KademliaID) {
@@ -80,7 +81,7 @@ func (kademlia *kademlia) sendPingMessage(contact *d7024e.Contact, rpc_id *d7024
 		fmt.Println(addr_err)
 	}*/
 
-	network.GetInstance().SendMessage(contact.Address, data)
+	network.GetInstance().SendMessage(contact.Address, &data)
 }
 
 func (kademlia *kademlia) sendFindContactMessage(contact *d7024e.Contact, toFind *d7024e.KademliaID, rpc_id *d7024e.KademliaID) {
@@ -95,7 +96,7 @@ func (kademlia *kademlia) sendFindContactMessage(contact *d7024e.Contact, toFind
 		fmt.Println(addr_err)
 	}*/
 
-	network.GetInstance().SendMessage(contact.Address, data)
+	network.GetInstance().SendMessage(contact.Address, &data)
 }
 
 func (kademlia *kademlia) sendFindDataMessage(contact *d7024e.Contact, toFind *d7024e.KademliaID, rpc_id *d7024e.KademliaID) {
@@ -110,7 +111,7 @@ func (kademlia *kademlia) sendFindDataMessage(contact *d7024e.Contact, toFind *d
 		fmt.Println(addr_err)
 	}*/
 
-	network.GetInstance().SendMessage(contact.Address, data)
+	network.GetInstance().SendMessage(contact.Address, &data)
 }
 
 func (kademlia *kademlia) sendStoreMessage(data []byte) {
