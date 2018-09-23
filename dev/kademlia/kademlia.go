@@ -7,8 +7,6 @@ import (
 
 	"time"
 
-	"fmt"
-
 	"../d7024e"
 	"../messageBufferList"
 	"../network"
@@ -260,9 +258,11 @@ func (kademlia *kademlia) Join(ip string, port int) {
 
 	net.SendFindContactMessage(&bootstrapContact, selfContact.ID, rpcID)
 
-	//wait until a response is retrieved
+	//wait until a response is
+	fmt.Println("sent join message")
 	mBuffer.WaitForResponse()
 	message := mBuffer.ExtractMessage()
+	fmt.Println("got response")
 
 	var contacts []d7024e.Contact
 	json.Unmarshal(message.RpcData, contacts)

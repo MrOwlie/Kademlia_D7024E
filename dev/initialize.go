@@ -15,30 +15,44 @@ import (
 func main() {
 
 	args := os.Args[1:]
-	ip := args[0]
-	port := args[1]
-	ownPort := args[2]
+	var ownPort, ip, port string
+	var iOwnPort, iPort int
+	performJoin := true
+	if len(args) == 1 {
+		ownPort = args[0]
+		performJoin = false
+	} else if len(args) == 3 {
+		ip = args[0]
+		port = args[1]
+		ownPort = args[2]
 
-	if !validIP4(ip) {
-		fmt.Printf("%q is not a valid ip-address, exiting.", ip)
+		if !validIP4(ip) {
+			fmt.Printf("%q is not a valid ip-address, exiting.", ip)
+			return
+		}
+		if !validPort(port) {
+			fmt.Printf("%q is not a valid port number, exiting.", port)
+			return
+		}
+		iPort, _ = strconv.Atoi(port)
+
+	} else {
+		fmt.Println("Unvalid amount of arguments")
 		return
 	}
-	if !validPort(port) {
-		fmt.Printf("%q is not a valid port number, exiting.", port)
-		return
-	}
+
 	if !validPort(ownPort) {
 		fmt.Printf("%q is not a valid port number, exiting.", ownPort)
 		return
 	}
+	iOwnPort, _ = strconv.Atoi(ownPort)
 
 	var kadem = kademlia.GetInstance()
 
-	iOwnPort, _ := strconv.Atoi(ownPort)
-	iPort, _ := strconv.Atoi(port)
-
 	go network.Listen("192.168.0.230", iOwnPort)
-	go kadem.Join(ip, iPort)
+	if performJoin {
+		go kadem.Join(ip, iPort)
+	}
 
 	var action, param1 string
 	for {
