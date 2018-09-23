@@ -9,7 +9,6 @@ import (
 
 	"../d7024e"
 	"../messageBufferList"
-	"../network"
 	"../routingTable"
 	"../rpc"
 )
@@ -198,7 +197,6 @@ func (kademlia *kademlia) lookupProcedure(procedureType int, target *d7024e.Kade
 
 func (kademlia *kademlia) lookupSubProcedure(target d7024e.Contact, toFind *d7024e.KademliaID, lookupType int, ch chan<- kademliaMessage) {
 	//create and add its own messageBuffer to the singleton list
-	net := network.GetInstance()
 	rpcID := d7024e.NewRandomKademliaID()
 	mBuffer := messageBufferList.NewMessageBuffer(rpcID)
 	mBufferList := messageBufferList.GetInstance()
@@ -206,9 +204,9 @@ func (kademlia *kademlia) lookupSubProcedure(target d7024e.Contact, toFind *d702
 
 	//send different messages depending on type
 	if lookupType == procedureContacts {
-		net.SendFindContactMessage(&target, toFind, rpcID)
+		kademlia.sendFindContactMessage(&target, toFind, rpcID)
 	} else if lookupType == procedureValue {
-		net.SendFindDataMessage(&target, toFind, rpcID)
+		kademlia.sendFindDataMessage(&target, toFind, rpcID)
 	}
 
 	//wait until a response is retrieved
@@ -250,14 +248,13 @@ func (kademlia *kademlia) Store(data []byte) {
 
 func (kademlia *kademlia) Join(ip string, port int) {
 	fmt.Printf("joining %q on port %d", ip, port)
-	net := network.GetInstance()
 	rpcID := d7024e.NewRandomKademliaID()
 	bootstrapContact := d7024e.NewContact(d7024e.NewRandomKademliaID(), fmt.Sprintf("%s:%d", ip, port))
 	mBuffer := messageBufferList.NewMessageBuffer(rpcID)
 	mBufferList := messageBufferList.GetInstance()
 	mBufferList.AddMessageBuffer(mBuffer)
 
-	net.SendFindContactMessage(&bootstrapContact, selfContact.ID, rpcID)
+	kademlia.sendFindContactMessage(&bootstrapContact, selfContact.ID, rpcID)
 
 	//wait until a response is
 	fmt.Println("sent join message")

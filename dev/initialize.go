@@ -50,6 +50,7 @@ func main() {
 	var kadem = kademlia.GetInstance()
 
 	network.SetPort(iOwnPort)
+	network.SetHandler(kadem)
 	net := network.GetInstance()
 
 	go net.Listen()

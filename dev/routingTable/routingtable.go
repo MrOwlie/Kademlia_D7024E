@@ -1,6 +1,7 @@
 package routingTable
 
 import (
+	"fmt"
 	"sync"
 
 	"../d7024e"
@@ -12,15 +13,16 @@ var once sync.Once
 // RoutingTable definition
 // keeps a refrence contact of me and an array of buckets
 type routingTable struct {
-	me      d7024e.Contact
+	Me      d7024e.Contact
 	buckets [d7024e.IDLength * 8]*d7024e.Bucket
 }
 
 func GetInstance() *routingTable {
 	once.Do(func() {
 		instance = newRoutingTable()
-		instance.me = d7024e.Contact{}
-		instance.me.ID = d7024e.NewRandomKademliaID()
+		instance.Me = d7024e.Contact{}
+		instance.Me.ID = d7024e.NewRandomKademliaID()
+		fmt.Println("my id is: ", instance.Me.ID)
 	})
 	return instance
 }
@@ -71,7 +73,7 @@ func (routingTable *routingTable) FindClosestContacts(target *d7024e.KademliaID,
 
 // getBucketIndex get the correct Bucket index for the KademliaID
 func (routingTable *routingTable) getBucketIndex(id *d7024e.KademliaID) int {
-	distance := id.CalcDistance(routingTable.me.ID)
+	distance := id.CalcDistance(routingTable.Me.ID)
 	for i := 0; i < d7024e.IDLength; i++ {
 		for j := 0; j < 8; j++ {
 			if (distance[i]>>uint8(7-j))&0x1 != 0 {
@@ -105,7 +107,7 @@ func (routingTable *routingTable) GetRefreshIDs() []*d7024e.KademliaID {
 			mostSigBit := byte(1) << (7 - n_bitsInToByte)
 			randomId[n_fullBytes] |= mostSigBit
 
-			kandemliaId := routingTable.me.ID.CalcDistance(randomId)
+			kandemliaId := routingTable.Me.ID.CalcDistance(randomId)
 			idList = append(idList, kandemliaId)
 		}
 	}

@@ -27,6 +27,7 @@ func NewBucket() *Bucket {
 // AddContact adds the Contact to the front of the bucket
 // or moves it to the front of the bucket if it already existed
 func (bucket *Bucket) AddContact(contact Contact) {
+	//fmt.Println("contact added: ", contact)
 	var element *list.Element
 	bucket.mutex.Lock()
 	defer bucket.mutex.Unlock()
