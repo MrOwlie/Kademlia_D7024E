@@ -49,7 +49,10 @@ func main() {
 
 	var kadem = kademlia.GetInstance()
 
-	go network.Listen("192.168.0.230", iOwnPort)
+	network.SetPort(iOwnPort)
+	net := network.GetInstance()
+
+	go net.Listen()
 	if performJoin {
 		go kadem.Join(ip, iPort)
 	}

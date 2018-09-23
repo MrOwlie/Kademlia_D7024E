@@ -1,2 +1,2 @@
-docker-compose up --scale kademliaNodes=3
+docker-compose up --scale kademliaNodes=1
 pause

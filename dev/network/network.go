@@ -22,6 +22,7 @@ type Handler interface {
 type network struct {
 	port int
 	ip   string
+	conn *net.UDPConn
 }
 
 var instance *network
@@ -42,8 +43,8 @@ func SetIp(ip string) {
 	GetInstance().ip = ip
 }
 
-func Listen(ip string, port int) {
-	serverAddr, addrErr := net.ResolveUDPAddr("udp", ip+":"+strconv.Itoa(port))
+func (network *network) Listen() {
+	serverAddr, addrErr := net.ResolveUDPAddr("udp", ":"+strconv.Itoa(network.port))
 	if addrErr != nil {
 		return
 	}
@@ -52,8 +53,9 @@ func Listen(ip string, port int) {
 	if listenErr != nil {
 		return
 	}
+	network.conn = conn
 
-	fmt.Println("Listening to UDP traffic on " + ip + ":" + strconv.Itoa(port))
+	fmt.Println("Listening to UDP traffic on port " + strconv.Itoa(network.port))
 	for {
 		var data [MAX_PACKET_SIZE]byte
 		n, addr, err := conn.ReadFromUDP(data[0:])
@@ -171,18 +173,18 @@ func (network *network) SendStoreMessage(data []byte) {
 
 func (network *network) sendMessage(addr *net.UDPAddr, data []byte) {
 
-	laddr, l_err := net.ResolveUDPAddr("udp", network.ip+":"+strconv.Itoa(network.port))
+	/*laddr, l_err := net.ResolveUDPAddr("udp", network.ip+":"+strconv.Itoa(network.port))
 
 	if l_err != nil {
 		fmt.Println(l_err)
 		return
-	}
+	}*/
 
-	conn, err := net.DialUDP("udp", laddr, addr)
+	_, err := network.conn.WriteToUDP(data, addr)
 	if err != nil {
-		fmt.Println(err)
+		fmt.Println("dilili", err)
 		return
 	}
-	conn.Write(data)
-	conn.Close()
+	//conn.Write(data)
+	//conn.Close()
 }

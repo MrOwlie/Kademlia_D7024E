@@ -249,6 +249,7 @@ func (kademlia *kademlia) Store(data []byte) {
 }
 
 func (kademlia *kademlia) Join(ip string, port int) {
+	fmt.Printf("joining %q on port %d", ip, port)
 	net := network.GetInstance()
 	rpcID := d7024e.NewRandomKademliaID()
 	bootstrapContact := d7024e.NewContact(d7024e.NewRandomKademliaID(), fmt.Sprintf("%s:%d", ip, port))
@@ -266,6 +267,7 @@ func (kademlia *kademlia) Join(ip string, port int) {
 
 	var contacts []d7024e.Contact
 	json.Unmarshal(message.RpcData, contacts)
+	fmt.Println(contacts)
 	for _, contact := range contacts {
 		routingTable.GetInstance().AddContact(contact)
 	}
