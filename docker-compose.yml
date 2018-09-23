@@ -1,31 +1,25 @@
 version: "3"
 services:
   kademliaMain:
-    image: larjim/kademlialab:latest
+    image: golang:1.11.0-alpine3.8
     stdin_open: true
     tty: true
     volumes:
       -  ./DeployedCode:/kademlia/bin
-#    deploy:
-#      replicas: 1 
-#        resources:
-#           limits:
-#              cpus: "0.1"
-#              memory: 50M
-#      restart_policy:
-#        condition: on-failure
-#    ports:
-#      - "4000:80"
+    working_dir: /kademlia/bin
+    command: go run initialize.go 10000
     networks:
       kademlia_network:
         ipv4_address: 172.16.238.10
 
   kademliaNodes:
-    image: larjim/kademlialab:latest
+    image: golang:1.11.0-alpine3.8
     stdin_open: true
     tty: true
     volumes:
       -  ./DeployedCode:/kademlia/bin
+    working_dir: /kademlia/bin
+    command: go run initialize.go 172.16.238.10 10000 10000
     depends_on:
       - "kademliaMain"
 #    ports:
