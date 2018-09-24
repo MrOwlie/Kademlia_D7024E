@@ -29,9 +29,8 @@ func (mb *messageBuffer) AppendMessage(message rpc.Message) {
 	mb.waitGroup.Done()
 }
 
-func (mb *messageBuffer) ExtractMessage() (r_message rpc.Message) {
-	r_message = mb.message
-	return
+func (mb *messageBuffer) ExtractMessage() rpc.Message {
+	return mb.message
 }
 
 func (mb *messageBuffer) WaitForResponse() {

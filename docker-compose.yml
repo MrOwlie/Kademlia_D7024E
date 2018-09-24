@@ -5,7 +5,7 @@ services:
     stdin_open: true
     tty: true
     volumes:
-      -  ./DeployedCode:/kademlia/bin
+      -  ./dev:/kademlia/bin
     working_dir: /kademlia/bin
     command: go run initialize.go 10000
     networks:
@@ -17,9 +17,23 @@ services:
     stdin_open: true
     tty: true
     volumes:
-      -  ./DeployedCode:/kademlia/bin
+      -  ./dev:/kademlia/bin
     working_dir: /kademlia/bin
     command: go run initialize.go 172.16.238.10 10000 10000
+    depends_on:
+      - "kademliaMain"
+#    ports:
+#      - "4000:80"
+    networks:
+      - kademlia_network
+      
+  kademliaTest:
+    image: golang:1.11.0-alpine3.8
+    stdin_open: true
+    tty: true
+    volumes:
+      -  ./dev:/kademlia/bin
+    working_dir: /kademlia/bin
     depends_on:
       - "kademliaMain"
 #    ports:

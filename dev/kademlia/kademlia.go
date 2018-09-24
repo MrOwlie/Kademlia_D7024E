@@ -36,6 +36,7 @@ const returnHasValue = 4
 func GetInstance() *kademlia {
 	once.Do(func() {
 		instance = &kademlia{}
+
 		fmt.Println("Starting timed jobs")
 		scheduleMessageBufferListGarbageCollect()
 		fmt.Println("RPC timeout garbage collection started!")
@@ -260,12 +261,12 @@ func (kademlia *kademlia) Join(ip string, port int) {
 	fmt.Println("sent join message")
 	mBuffer.WaitForResponse()
 	message := mBuffer.ExtractMessage()
-	fmt.Println("got response")
+	fmt.Println("got response: ", string(message.RpcData))
 
-	var contacts []d7024e.Contact
-	json.Unmarshal(message.RpcData, contacts)
+	var contacts rpc.ClosestNodes = rpc.ClosestNodes{}
+	json.Unmarshal(message.RpcData, &contacts)
 	fmt.Println(contacts)
-	for _, contact := range contacts {
+	for _, contact := range contacts.Closest {
 		routingTable.GetInstance().AddContact(contact)
 	}
 

@@ -40,7 +40,9 @@ func newRoutingTable() *routingTable {
 func (routingTable *routingTable) AddContact(contact d7024e.Contact) {
 	bucketIndex := routingTable.getBucketIndex(contact.ID)
 	bucket := routingTable.buckets[bucketIndex]
-	bucket.AddContact(contact)
+	if !routingTable.Me.ID.Equals(contact.ID) {
+		bucket.AddContact(contact)
+	}
 }
 
 // FindClosestContacts finds the count closest Contacts to the target in the RoutingTable
