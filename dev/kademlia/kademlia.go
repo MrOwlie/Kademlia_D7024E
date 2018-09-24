@@ -285,18 +285,29 @@ func (kademlia *kademlia) Join(ip string, port int, wg *sync.WaitGroup) {
 	mBufferList := messageBufferList.GetInstance()
 	mBufferList.AddMessageBuffer(mBuffer)
 
-	kademlia.sendFindContactMessage(&bootstrapContact, selfContact.ID, rpcID)
+	retry := 0
+	for retry < 3 {
+		fmt.Printf("Trying to connect. Try number %d", retry)
+		kademlia.sendFindContactMessage(&bootstrapContact, selfContact.ID, rpcID)
 
-	//wait until a response is
-	mBuffer.WaitForResponse()
-	message := mBuffer.ExtractMessage()
+		//wait until a response is
+		mBuffer.WaitForResponse()
+		message := mBuffer.ExtractMessage()
 
-	var contacts rpc.ClosestNodes = rpc.ClosestNodes{}
-	json.Unmarshal(message.RpcData, &contacts)
-	for _, contact := range contacts.Closest {
-		routingTable.GetInstance().AddContact(contact)
+		if message.RpcType == rpc.CLOSEST_NODES {
+
+			var contacts rpc.ClosestNodes = rpc.ClosestNodes{}
+			json.Unmarshal(message.RpcData, &contacts)
+			for _, contact := range contacts.Closest {
+				routingTable.GetInstance().AddContact(contact)
+			}
+			wg.Done()
+			break
+		}
+		rpcID = d7024e.NewRandomKademliaID()
+		retry++
 	}
-	wg.Done()
+	fmt.Printf("Failed to join network after three tries. Please try to connect to another node.")
 
 }
 
