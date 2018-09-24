@@ -43,10 +43,10 @@ func (bucket *Bucket) AddContact(contact Contact) {
 
 	if element == nil {
 		if bucket.list.Len() < bucketSize {
-			bucket.list.PushFront(contact)
+			bucket.list.PushBack(contact)
 		}
 	} else {
-		bucket.list.MoveToFront(element)
+		bucket.list.MoveToBack(element)
 	}
 }
 
@@ -75,4 +75,13 @@ func (bucket *Bucket) Len() int {
 func (bucket *Bucket) NeedsRefresh() bool {
 	elapsed := time.Since(bucket.latestLookup)
 	return (elapsed.Minutes() > timeForRefresh)
+}
+
+func (bucket *Bucket) isFull(contact Contact) bool {
+	if bucket.list.Len() < bucketSize {
+		return false
+	}
+
+	return true
+
 }
