@@ -273,8 +273,8 @@ func (kademlia *kademlia) LookupData(id string) {
 	kademlia.lookupProcedure(procedureValue, fileHash)
 }
 
-func (kademlia *kademlia) Store(data []byte) {
-	// TODO
+func (kademlia *kademlia) Store(hash string) {
+	kademlia.lookupProcedure(procedureValue, d7024e.NewKademliaID(hash))
 }
 
 func (kademlia *kademlia) Join(ip string, port int) {

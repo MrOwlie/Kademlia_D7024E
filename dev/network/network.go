@@ -8,6 +8,7 @@ import (
 	"os"
 	"strconv"
 	"sync"
+	"errors"
 )
 
 const MAX_PACKET_SIZE int = 5120 //TODO Calculate actual max packet size.
@@ -99,31 +100,34 @@ func ListenFileServer(ip string, port int) {
 	}
 }
 
-func FetchFile(url string, fileName string) error {
+func FetchFile(url string, fileName string) (error, string) {
+	filePath := ""
+
 	resp, err := http.Get(url)
 	if err != nil {
 		fmt.Println(err)
-		return err
+		return err, filePath
 	}
 	defer resp.Body.Close()
 
 	if resp.Status == "200 OK" {
 
-		file, err := os.Create(storagePath + "/" + fileName)
+		filePath = storagePath + "/" + fileName
+		file, err := os.Create(filePath)
 		if err != nil {
 			fmt.Println(err)
-			return err
+			return err, filePath
 		}
 		defer file.Close()
 
 		_, err = io.Copy(file, resp.Body)
 		if err != nil {
 			fmt.Println(err)
-			return err
+			return err, filePath
 		}
 
 	} else {
-		fmt.Println(resp.Status)
+		return errors.New(resp.Status), filePath
 	}
-	return nil
+	return nil, filePath 
 }

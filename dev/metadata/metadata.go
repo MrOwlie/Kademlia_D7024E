@@ -89,12 +89,9 @@ func (fileMetaData *FileMetaData) FilesToRepublish() (filesToRepublish []string)
 	return
 }
 
-func (fileMetaData *FileMetaData) AddFile(newFile MetaData){
+func (fileMetaData *FileMetaData) AddFile(filePath string, hash string, expirationDate time.Time){
 	fileMetaData.mutex.Lock()
-	fileMetaData.fileData = append(fileMetaData.fileData, newFile)
+	fileMetaData.fileData = append(fileMetaData.fileData, MetaData{filePath, hash, time.Now(), expirationDate})
 	fileMetaData.mutex.Unlock()
 }
-
-
-
 
