@@ -2,8 +2,13 @@ package d7024e
 
 import (
 	"container/list"
+	"fmt"
 	"sync"
 	"time"
+
+	"../d7024e"
+	"../kademlia"
+	"../messageBufferList"
 )
 
 const bucketSize = 20
@@ -27,7 +32,6 @@ func NewBucket() *Bucket {
 // AddContact adds the Contact to the front of the bucket
 // or moves it to the front of the bucket if it already existed
 func (bucket *Bucket) AddContact(contact Contact) {
-	//fmt.Println("contact added: ", contact)
 	var element *list.Element
 	bucket.mutex.Lock()
 	defer bucket.mutex.Unlock()
@@ -43,7 +47,32 @@ func (bucket *Bucket) AddContact(contact Contact) {
 
 	if element == nil {
 		if bucket.list.Len() < bucketSize {
-			bucket.list.PushFront(contact)
+			bucket.list.PushBack(contact)
+		} else {
+			kademlia := kademlia.GetInstance()
+			rpcID := d7024e.NewRandomKademliaID()
+			pingContact := bucket.list.Front()
+			mBuffer := messageBufferList.NewMessageBuffer(rpcID)
+			mBufferList := messageBufferList.GetInstance()
+			mBufferList.AddMessageBuffer(mBuffer)
+
+			kademlia.sendPingMessage(&pingContact, rpcID)
+
+			fmt.Println("sent ping message from bucket")
+
+			mBuffer.WaitForResponse()
+			message := mBuffer.ExtractMessage()
+			fmt.Println("ping executed")
+
+			if (message != nil) || (message.rpcType == rpc.PONG) {
+				fmt.Println("ping responded successfully, node alive.")
+				bucket.list.MoveToBack(&pingContact)
+			} else {
+				fmt.Println("ping without response, node dead.")
+				bucket.list.Remove(&pingContact)
+				bucket.list.PushBack(contact)
+			}
+
 		}
 	} else {
 		bucket.list.MoveToFront(element)

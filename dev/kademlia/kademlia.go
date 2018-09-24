@@ -4,8 +4,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"sync"
-
+	"crypto/sha1"
+	"encoding/hex"
 	"time"
+	"io"
+	"os"
 
 	"../d7024e"
 	"../messageBufferList"
@@ -24,6 +27,8 @@ type kademliaMessage struct {
 var instance *kademlia
 var once sync.Once
 var selfContact d7024e.Contact = d7024e.NewContact(d7024e.NewRandomKademliaID(), "localhost")
+
+var storagePath string = "What ever the storage path is" //TODO fix this
 
 const alpha int = 3
 const valueK int = 20
@@ -278,4 +283,27 @@ func (kademlia *kademlia) ReturnLookupContact(target *d7024e.Contact) {
 
 func (kademlia *kademlia) ReturnLookupData(hash string) {
 	// TODO
+}
+
+func (kademlia *kademlia) StoreFile(filePath string) {
+	file, err := os.Open(filePath)
+	if err != nil{
+		fmt.Println(err)
+		return
+	}
+
+	h := sha1.New()
+	_, err = io.Copy(h, file)
+	if err != nil{
+		fmt.Println(err)
+		return
+	}
+	file.Close()
+
+	hash := h.Sum(nil)
+	newFileName := hex.EncodeToString(hash)
+	newPath := storagePath+"/"+newFileName
+	os.Rename(filePath, newPath)
+
+	//Need to use the result from lookUpProcedure
 }
