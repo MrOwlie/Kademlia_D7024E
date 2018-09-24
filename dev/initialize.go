@@ -12,6 +12,8 @@ import (
 	"./network"
 )
 
+var storagePath string = "What ever the storage path is" //TODO fix this
+
 func main() {
 
 	args := os.Args[1:]
@@ -46,6 +48,8 @@ func main() {
 		return
 	}
 	iOwnPort, _ = strconv.Atoi(ownPort)
+
+	os.Mkdir(storagePath, 0766)
 
 	var kadem = kademlia.GetInstance()
 

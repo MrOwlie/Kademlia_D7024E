@@ -3,11 +3,15 @@ package network
 import (
 	"fmt"
 	"net"
+	"net/http"
 	"strconv"
 	"sync"
+	"io"
+	"os"
 )
 
 const MAX_PACKET_SIZE int = 512 //TODO Calculate actual max packet size.
+const storagePath string = "" //What will the path in the containers be?
 
 type Handler interface {
 	HandleIncomingRPC([]byte, string)
@@ -84,4 +88,41 @@ func (network *network) SendMessage(addr string, data []byte) {
 	}
 	//conn.Write(data)
 	//conn.Close()
+}
+
+func ListenFileServer(ip string, port int){
+	http.Handle("/", http.FileServer(http.Dir(storagePath)))
+	err := http.ListenAndServe(":"+strconv.Itoa(port), nil)
+	if(err != nil){
+		fmt.Println(err)
+	}
+}
+
+func FetchFile(url string, fileName string) error{
+    resp, err := http.Get(url)
+    if err != nil {
+		fmt.Println(err)
+        return err
+    }
+    defer resp.Body.Close()
+
+	if resp.Status == "200 OK"{
+
+		file, err := os.Create(storagePath+"/"+fileName)
+		if err != nil {
+			fmt.Println(err)
+			return err
+		}
+		defer file.Close()
+
+		_, err = io.Copy(file, resp.Body)
+		if err != nil {
+			fmt.Println(err)
+			return err
+		}
+
+	} else {
+		fmt.Println(resp.Status)
+	}
+    return nil	
 }
