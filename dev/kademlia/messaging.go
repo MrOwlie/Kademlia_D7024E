@@ -118,7 +118,7 @@ func (kademlia *kademlia) sendPingMessage(contact *d7024e.Contact, rpc_id *d7024
 		fmt.Println(addr_err)
 	}*/
 
-	network.GetInstance().SendMessage(contact.Address, data)
+	network.GetInstance().SendMessage(contact.Address, &data)
 }
 
 func (kademlia *kademlia) sendFindContactMessage(contact *d7024e.Contact, toFind *d7024e.KademliaID, rpc_id *d7024e.KademliaID) {
@@ -133,7 +133,7 @@ func (kademlia *kademlia) sendFindContactMessage(contact *d7024e.Contact, toFind
 		fmt.Println(addr_err)
 	}*/
 
-	network.GetInstance().SendMessage(contact.Address, data)
+	network.GetInstance().SendMessage(contact.Address, &data)
 }
 
 func (kademlia *kademlia) sendFindDataMessage(contact *d7024e.Contact, toFind *d7024e.KademliaID, rpc_id *d7024e.KademliaID) {
@@ -148,7 +148,7 @@ func (kademlia *kademlia) sendFindDataMessage(contact *d7024e.Contact, toFind *d
 		fmt.Println(addr_err)
 	}*/
 
-	network.GetInstance().SendMessage(contact.Address, data)
+	network.GetInstance().SendMessage(contact.Address, &data)
 }
 
 func (kademlia *kademlia) sendStoreMessage(contact *d7024e.Contact, rpc_id *d7024e.KademliaID, fileHash *d7024e.KademliaID) {

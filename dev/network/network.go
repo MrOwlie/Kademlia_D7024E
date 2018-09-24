@@ -10,8 +10,7 @@ import (
 	"os"
 )
 
-const MAX_PACKET_SIZE int = 512 //TODO Calculate actual max packet size.
-const storagePath string = "" //What will the path in the containers be?
+const MAX_PACKET_SIZE int = 5120 //TODO Calculate actual max packet size.
 
 type Handler interface {
 	HandleIncomingRPC([]byte, string)
@@ -57,6 +56,7 @@ func (network *network) Listen() {
 		return
 	}
 	network.conn = conn
+	defer conn.Close()
 
 	fmt.Println("Listening to UDP traffic on port " + strconv.Itoa(network.port))
 	for {
@@ -72,7 +72,7 @@ func (network *network) Listen() {
 
 }
 
-func (network *network) SendMessage(addr string, data []byte) {
+func (network *network) SendMessage(addr string, data *[]byte) {
 
 	laddr, l_err := net.ResolveUDPAddr("udp", addr)
 
@@ -81,7 +81,7 @@ func (network *network) SendMessage(addr string, data []byte) {
 		return
 	}
 
-	_, err := network.conn.WriteToUDP(data, laddr)
+	_, err := network.conn.WriteToUDP(*data, laddr)
 	if err != nil {
 		fmt.Println("dilili", err)
 		return
