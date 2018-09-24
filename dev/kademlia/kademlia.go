@@ -1,14 +1,14 @@
 package kademlia
 
 import (
-	"encoding/json"
-	"fmt"
-	"sync"
 	"crypto/sha1"
 	"encoding/hex"
-	"time"
+	"encoding/json"
+	"fmt"
 	"io"
 	"os"
+	"sync"
+	"time"
 
 	"../d7024e"
 	"../messageBufferList"
@@ -285,16 +285,52 @@ func (kademlia *kademlia) ReturnLookupData(hash string) {
 	// TODO
 }
 
+func (kademlia *kademlia) addContact(contact Contact) {
+
+	rt := routingTable.GetInstance()
+
+	bucket := rt.buckets[rt.getBucketIndex(contact.ID)]
+
+	if bucket.isFull() {
+		kademlia := kademlia.GetInstance()
+		rpcID := NewRandomKademliaID()
+		pingContact := bucket.list.Front()
+		mBuffer := messageBufferList.NewMessageBuffer(rpcID)
+		mBufferList := messageBufferList.GetInstance()
+		mBufferList.AddMessageBuffer(mBuffer)
+
+		kademlia.sendPingMessage(pingContact, rpcID)
+
+		fmt.Println("sent ping message from bucket")
+
+		mBuffer.WaitForResponse()
+		message := mBuffer.ExtractMessage()
+		fmt.Println("ping executed")
+
+		if (message != nil) || (message.rpcType == rpc.PONG) {
+			fmt.Println("ping responded successfully, node alive.")
+			bucket.addContact(pingContact)
+		} else {
+			fmt.Println("ping without response, node dead.")
+			bucket.list.Remove(pingContact)
+			bucket.addContact(contact)
+		}
+	} else {
+		bucket.addContact(contact)
+	}
+
+}
+
 func (kademlia *kademlia) StoreFile(filePath string) {
 	file, err := os.Open(filePath)
-	if err != nil{
+	if err != nil {
 		fmt.Println(err)
 		return
 	}
 
 	h := sha1.New()
 	_, err = io.Copy(h, file)
-	if err != nil{
+	if err != nil {
 		fmt.Println(err)
 		return
 	}
@@ -302,7 +338,7 @@ func (kademlia *kademlia) StoreFile(filePath string) {
 
 	hash := h.Sum(nil)
 	newFileName := hex.EncodeToString(hash)
-	newPath := storagePath+"/"+newFileName
+	newPath := storagePath + "/" + newFileName
 	os.Rename(filePath, newPath)
 
 	//Need to use the result from lookUpProcedure

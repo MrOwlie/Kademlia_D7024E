@@ -2,13 +2,8 @@ package d7024e
 
 import (
 	"container/list"
-	"fmt"
 	"sync"
 	"time"
-
-	"../d7024e"
-	"../kademlia"
-	"../messageBufferList"
 )
 
 const bucketSize = 20
@@ -48,34 +43,9 @@ func (bucket *Bucket) AddContact(contact Contact) {
 	if element == nil {
 		if bucket.list.Len() < bucketSize {
 			bucket.list.PushBack(contact)
-		} else {
-			kademlia := kademlia.GetInstance()
-			rpcID := d7024e.NewRandomKademliaID()
-			pingContact := bucket.list.Front()
-			mBuffer := messageBufferList.NewMessageBuffer(rpcID)
-			mBufferList := messageBufferList.GetInstance()
-			mBufferList.AddMessageBuffer(mBuffer)
-
-			kademlia.sendPingMessage(&pingContact, rpcID)
-
-			fmt.Println("sent ping message from bucket")
-
-			mBuffer.WaitForResponse()
-			message := mBuffer.ExtractMessage()
-			fmt.Println("ping executed")
-
-			if (message != nil) || (message.rpcType == rpc.PONG) {
-				fmt.Println("ping responded successfully, node alive.")
-				bucket.list.MoveToBack(&pingContact)
-			} else {
-				fmt.Println("ping without response, node dead.")
-				bucket.list.Remove(&pingContact)
-				bucket.list.PushBack(contact)
-			}
-
 		}
 	} else {
-		bucket.list.MoveToFront(element)
+		bucket.list.MoveToBack(element)
 	}
 }
 
@@ -104,4 +74,13 @@ func (bucket *Bucket) Len() int {
 func (bucket *Bucket) NeedsRefresh() bool {
 	elapsed := time.Since(bucket.latestLookup)
 	return (elapsed.Minutes() > timeForRefresh)
+}
+
+func (bucket *Bucket) isFull(contact Contact) bool {
+	if bucket.list.Len() < bucketSize {
+		return false
+	}
+
+	return true
+
 }
