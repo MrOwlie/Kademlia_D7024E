@@ -12,7 +12,7 @@ const timeForRefresh = 60
 // bucket definition
 // contains a List
 type Bucket struct {
-	list         *list.List
+	List         *list.List
 	mutex        sync.Mutex
 	latestLookup time.Time
 }
@@ -20,19 +20,20 @@ type Bucket struct {
 // newBucket returns a new instance of a bucket
 func NewBucket() *Bucket {
 	bucket := &Bucket{}
-	bucket.list = list.New()
+	bucket.List = list.New()
 	return bucket
 }
 
 // AddContact adds the Contact to the front of the bucket
 // or moves it to the front of the bucket if it already existed
 func (bucket *Bucket) AddContact(contact Contact) {
+	//fmt.Println("contact added: ", contact)
 	var element *list.Element
 	bucket.mutex.Lock()
 	defer bucket.mutex.Unlock()
 	bucket.latestLookup = time.Now()
 
-	for e := bucket.list.Front(); e != nil; e = e.Next() {
+	for e := bucket.List.Front(); e != nil; e = e.Next() {
 		nodeID := e.Value.(Contact).ID
 
 		if (contact).ID.Equals(nodeID) {
@@ -41,11 +42,11 @@ func (bucket *Bucket) AddContact(contact Contact) {
 	}
 
 	if element == nil {
-		if bucket.list.Len() < bucketSize {
-			bucket.list.PushBack(contact)
+		if bucket.List.Len() < bucketSize {
+			bucket.List.PushBack(contact)
 		}
 	} else {
-		bucket.list.MoveToBack(element)
+		bucket.List.MoveToBack(element)
 	}
 }
 
@@ -57,7 +58,7 @@ func (bucket *Bucket) GetContactAndCalcDistance(target *KademliaID) []Contact {
 	defer bucket.mutex.Unlock()
 	bucket.latestLookup = time.Now()
 
-	for elt := bucket.list.Front(); elt != nil; elt = elt.Next() {
+	for elt := bucket.List.Front(); elt != nil; elt = elt.Next() {
 		contact := elt.Value.(Contact)
 		contact.CalcDistance(target)
 		contacts = append(contacts, contact)
@@ -68,7 +69,7 @@ func (bucket *Bucket) GetContactAndCalcDistance(target *KademliaID) []Contact {
 
 // Len return the size of the bucket
 func (bucket *Bucket) Len() int {
-	return bucket.list.Len()
+	return bucket.List.Len()
 }
 
 func (bucket *Bucket) NeedsRefresh() bool {
@@ -76,8 +77,8 @@ func (bucket *Bucket) NeedsRefresh() bool {
 	return (elapsed.Minutes() > timeForRefresh)
 }
 
-func (bucket *Bucket) isFull(contact Contact) bool {
-	if bucket.list.Len() < bucketSize {
+func (bucket *Bucket) IsFull() bool {
+	if bucket.List.Len() < bucketSize {
 		return false
 	}
 

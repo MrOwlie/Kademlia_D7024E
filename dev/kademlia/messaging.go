@@ -1,19 +1,18 @@
 package kademlia
 
 import (
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"os"
-	"encoding/hex"
 
 	"../d7024e"
 	"../messageBufferList"
-	"../network"
 	"../routingTable"
 	"../rpc"
 )
 
-var storagePath string = "What ever the storage path is" //TODO fix this
+//var storagePath string = "What ever the storage path is" //TODO fix this
 
 func (kademlia *kademlia) HandleIncomingRPC(data []byte, addr string) {
 	var message rpc.Message = rpc.Message{}
@@ -64,7 +63,7 @@ func (kademlia *kademlia) handleFindNode(rpc_id d7024e.KademliaID, find_node rpc
 		fmt.Println(err)
 	}
 
-	network.GetInstance().SendMessage(addr, response)
+	kademlia.network.SendMessage(addr, &response)
 }
 
 func (kademlia *kademlia) handlePing(rpc_id d7024e.KademliaID, addr string) {
@@ -75,21 +74,21 @@ func (kademlia *kademlia) handlePing(rpc_id d7024e.KademliaID, addr string) {
 		return
 	}
 
-	network.GetInstance().SendMessage(addr, response)
+	kademlia.network.SendMessage(addr, &response)
 }
 
-func (kademlia *kademlia) handleFindValue(rpc_id d7024e.KademliaID, find_node rpc.FindNode, addr string){
+func (kademlia *kademlia) handleFindValue(rpc_id d7024e.KademliaID, find_node rpc.FindNode, addr string) {
 	rt := routingTable.GetInstance()
-	fileName := hex.EncodeToString(find_node.NodeId)
+	fileName := hex.EncodeToString(find_node.NodeId[:])
 	var response []byte
 
-	if _, err := os.Stat(storagePath+"/"+fileName); err != nil {
+	if _, err := os.Stat(storagePath + "/" + fileName); err != nil {
 		if !os.IsNotExist(err) {
 			fmt.Println(err)
 		} else {
 			closest_nodes := rpc.ClosestNodes{rt.FindClosestContacts(&find_node.NodeId, 20)}
 			response, err = rpc.Marshal(rpc.CLOSEST_NODES, rpc_id, *rt.Me.ID, closest_nodes)
-			
+
 			if err != nil {
 				fmt.Println(err)
 			}
@@ -102,7 +101,7 @@ func (kademlia *kademlia) handleFindValue(rpc_id d7024e.KademliaID, find_node rp
 		}
 	}
 
-	network.GetInstance().SendMessage(addr, response)
+	kademlia.network.SendMessage(addr, &response)
 }
 
 func (kademlia *kademlia) sendPingMessage(contact *d7024e.Contact, rpc_id *d7024e.KademliaID) {
@@ -119,7 +118,7 @@ func (kademlia *kademlia) sendPingMessage(contact *d7024e.Contact, rpc_id *d7024
 		fmt.Println(addr_err)
 	}*/
 
-	network.GetInstance().SendMessage(contact.Address, &data)
+	kademlia.network.SendMessage(contact.Address, &data)
 }
 
 func (kademlia *kademlia) sendFindContactMessage(contact *d7024e.Contact, toFind *d7024e.KademliaID, rpc_id *d7024e.KademliaID) {
@@ -134,7 +133,7 @@ func (kademlia *kademlia) sendFindContactMessage(contact *d7024e.Contact, toFind
 		fmt.Println(addr_err)
 	}*/
 
-	network.GetInstance().SendMessage(contact.Address, &data)
+	kademlia.network.SendMessage(contact.Address, &data)
 }
 
 func (kademlia *kademlia) sendFindDataMessage(contact *d7024e.Contact, toFind *d7024e.KademliaID, rpc_id *d7024e.KademliaID) {
@@ -149,7 +148,7 @@ func (kademlia *kademlia) sendFindDataMessage(contact *d7024e.Contact, toFind *d
 		fmt.Println(addr_err)
 	}*/
 
-	network.GetInstance().SendMessage(contact.Address, &data)
+	kademlia.network.SendMessage(contact.Address, &data)
 }
 
 func (kademlia *kademlia) sendStoreMessage(contact *d7024e.Contact, rpc_id *d7024e.KademliaID, fileHash *d7024e.KademliaID) {
@@ -159,5 +158,5 @@ func (kademlia *kademlia) sendStoreMessage(contact *d7024e.Contact, rpc_id *d702
 		fmt.Println(err)
 	}
 
-	network.GetInstance().SendMessage(contact.Address, data) 
+	kademlia.network.SendMessage(contact.Address, &data)
 }
