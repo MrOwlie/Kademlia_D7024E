@@ -121,6 +121,11 @@ func (kademlia *kademlia) lookupProcedure(procedureType int, target *d7024e.Kade
 					case x, ok := <-chans[i]:
 						if ok {
 							if x.returnType == returnContacts {
+								for i, c := range x.contacts {
+									if c.ID == selfContact.ID {
+										x.contacts = append(x.contacts[0:i-1], x.contacts[i+1:len(x.contacts)]...)
+									}
+								}
 								candids.Append(x.contacts)
 							} else if x.returnType == returnHasValue {
 								go kademlia.requestFile(target, x.contacts[0])
@@ -145,6 +150,11 @@ func (kademlia *kademlia) lookupProcedure(procedureType int, target *d7024e.Kade
 				case x, ok := <-chans[i]:
 					if ok {
 						if x.returnType == returnContacts {
+							for i, c := range x.contacts {
+								if c.ID == selfContact.ID {
+									x.contacts = append(x.contacts[0:i-1], x.contacts[i+1:len(x.contacts)]...)
+								}
+							}
 							candids.Append(x.contacts)
 						} else if x.returnType == returnHasValue {
 							go kademlia.requestFile(target, x.contacts[0])
@@ -192,6 +202,11 @@ func (kademlia *kademlia) lookupProcedure(procedureType int, target *d7024e.Kade
 					case x, ok := <-chans[i]:
 						if ok {
 							if x.returnType == returnContacts {
+								for i, c := range x.contacts {
+									if c.ID == selfContact.ID {
+										x.contacts = append(x.contacts[0:i-1], x.contacts[i+1:len(x.contacts)]...)
+									}
+								}
 								candids.Append(x.contacts)
 							} else if x.returnType == returnHasValue {
 								go kademlia.requestFile(target, x.contacts[0])
@@ -292,21 +307,22 @@ func (kademlia *kademlia) ReturnLookupData(hash string) {
 	// TODO
 }
 
-func (kademlia *kademlia) addContact(contact Contact) {
+func (kademlia *kademlia) addContact(contact *d7024e.Contact) {
 
 	rt := routingTable.GetInstance()
 
-	bucket := rt.buckets[rt.getBucketIndex(contact.ID)]
+	bucket := rt.Buckets[rt.GetBucketIndex(contact.ID)]
 
-	if bucket.isFull() {
-		kademlia := kademlia.GetInstance()
-		rpcID := NewRandomKademliaID()
-		pingContact := bucket.list.Front()
+	if bucket.IsFull() {
+		kademlia := GetInstance()
+		rpcID := d7024e.NewRandomKademliaID()
+		pingContact := bucket.List.Front().Value.(d7024e.Contact)
+		pingContactElement := bucket.List.Front()
 		mBuffer := messageBufferList.NewMessageBuffer(rpcID)
 		mBufferList := messageBufferList.GetInstance()
 		mBufferList.AddMessageBuffer(mBuffer)
 
-		kademlia.sendPingMessage(pingContact, rpcID)
+		kademlia.sendPingMessage(&pingContact, rpcID)
 
 		fmt.Println("sent ping message from bucket")
 
@@ -314,16 +330,16 @@ func (kademlia *kademlia) addContact(contact Contact) {
 		message := mBuffer.ExtractMessage()
 		fmt.Println("ping executed")
 
-		if (message != nil) || (message.rpcType == rpc.PONG) {
+		if message.RpcType == rpc.PONG {
 			fmt.Println("ping responded successfully, node alive.")
-			bucket.addContact(pingContact)
+			bucket.AddContact(pingContact)
 		} else {
 			fmt.Println("ping without response, node dead.")
-			bucket.list.Remove(pingContact)
-			bucket.addContact(contact)
+			bucket.List.Remove(pingContactElement)
+			bucket.AddContact(*contact)
 		}
 	} else {
-		bucket.addContact(contact)
+		bucket.AddContact(*contact)
 	}
 
 }

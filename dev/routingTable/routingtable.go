@@ -14,7 +14,7 @@ var once sync.Once
 // keeps a refrence contact of me and an array of buckets
 type routingTable struct {
 	Me      d7024e.Contact
-	buckets [d7024e.IDLength * 8]*d7024e.Bucket
+	Buckets [d7024e.IDLength * 8]*d7024e.Bucket
 }
 
 func GetInstance() *routingTable {
@@ -31,15 +31,15 @@ func GetInstance() *routingTable {
 func newRoutingTable() *routingTable {
 	routingTable := &routingTable{}
 	for i := 0; i < d7024e.IDLength*8; i++ {
-		routingTable.buckets[i] = d7024e.NewBucket()
+		routingTable.Buckets[i] = d7024e.NewBucket()
 	}
 	return routingTable
 }
 
 // AddContact add a new contact to the correct Bucket
 func (routingTable *routingTable) AddContact(contact d7024e.Contact) {
-	bucketIndex := routingTable.getBucketIndex(contact.ID)
-	bucket := routingTable.buckets[bucketIndex]
+	bucketIndex := routingTable.GetBucketIndex(contact.ID)
+	bucket := routingTable.Buckets[bucketIndex]
 	if !routingTable.Me.ID.Equals(contact.ID) {
 		bucket.AddContact(contact)
 	}
@@ -48,18 +48,18 @@ func (routingTable *routingTable) AddContact(contact d7024e.Contact) {
 // FindClosestContacts finds the count closest Contacts to the target in the RoutingTable
 func (routingTable *routingTable) FindClosestContacts(target *d7024e.KademliaID, count int) []d7024e.Contact {
 	var candidates d7024e.ContactCandidates
-	bucketIndex := routingTable.getBucketIndex(target)
-	bucket := routingTable.buckets[bucketIndex]
+	bucketIndex := routingTable.GetBucketIndex(target)
+	bucket := routingTable.Buckets[bucketIndex]
 
 	candidates.Append(bucket.GetContactAndCalcDistance(target))
 
 	for i := 1; (bucketIndex-i >= 0 || bucketIndex+i < d7024e.IDLength*8) && candidates.Len() < count; i++ {
 		if bucketIndex-i >= 0 {
-			bucket = routingTable.buckets[bucketIndex-i]
+			bucket = routingTable.Buckets[bucketIndex-i]
 			candidates.Append(bucket.GetContactAndCalcDistance(target))
 		}
 		if bucketIndex+i < d7024e.IDLength*8 {
-			bucket = routingTable.buckets[bucketIndex+i]
+			bucket = routingTable.Buckets[bucketIndex+i]
 			candidates.Append(bucket.GetContactAndCalcDistance(target))
 		}
 	}
@@ -74,7 +74,7 @@ func (routingTable *routingTable) FindClosestContacts(target *d7024e.KademliaID,
 }
 
 // getBucketIndex get the correct Bucket index for the KademliaID
-func (routingTable *routingTable) getBucketIndex(id *d7024e.KademliaID) int {
+func (routingTable *routingTable) GetBucketIndex(id *d7024e.KademliaID) int {
 	distance := id.CalcDistance(routingTable.Me.ID)
 	for i := 0; i < d7024e.IDLength; i++ {
 		for j := 0; j < 8; j++ {
@@ -92,8 +92,8 @@ func (routingTable *routingTable) GetRefreshIDs() []*d7024e.KademliaID {
 
 	var idList []*d7024e.KademliaID
 
-	for i := 0; i < len(routingTable.buckets); i++ {
-		if routingTable.buckets[i].NeedsRefresh() {
+	for i := 0; i < len(routingTable.Buckets); i++ {
+		if routingTable.Buckets[i].NeedsRefresh() {
 			n_fullBytes := i / 8
 			var n_bitsInToByte uint64 = uint64(i % 8)
 			randomId := d7024e.NewRandomKademliaID() //Used to get a random number of correct size
