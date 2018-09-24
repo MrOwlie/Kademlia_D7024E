@@ -1,14 +1,14 @@
 package kademlia
 
 import (
-	"encoding/json"
-	"fmt"
-	"sync"
 	"crypto/sha1"
 	"encoding/hex"
-	"time"
+	"encoding/json"
+	"fmt"
 	"io"
 	"os"
+	"sync"
+	"time"
 
 	"../d7024e"
 	"../messageBufferList"
@@ -16,7 +16,13 @@ import (
 	"../rpc"
 )
 
+type NetworkHandler interface {
+	Listen()
+	SendMessage(string, *[]byte)
+}
+
 type kademlia struct {
+	network NetworkHandler
 }
 
 type kademliaMessage struct {
@@ -54,6 +60,10 @@ func GetInstance() *kademlia {
 		fmt.Println("All timed jobs started successfully!")
 	})
 	return instance
+}
+
+func (kademlia *kademlia) SetNetworkHandler(handler NetworkHandler) {
+	GetInstance().network = handler
 }
 
 func (kademlia *kademlia) lookupProcedure(procedureType int, target *d7024e.KademliaID) {
@@ -263,14 +273,11 @@ func (kademlia *kademlia) Join(ip string, port int) {
 	kademlia.sendFindContactMessage(&bootstrapContact, selfContact.ID, rpcID)
 
 	//wait until a response is
-	fmt.Println("sent join message")
 	mBuffer.WaitForResponse()
 	message := mBuffer.ExtractMessage()
-	fmt.Println("got response: ", string(message.RpcData))
 
 	var contacts rpc.ClosestNodes = rpc.ClosestNodes{}
 	json.Unmarshal(message.RpcData, &contacts)
-	fmt.Println(contacts)
 	for _, contact := range contacts.Closest {
 		routingTable.GetInstance().AddContact(contact)
 	}
@@ -287,14 +294,14 @@ func (kademlia *kademlia) ReturnLookupData(hash string) {
 
 func (kademlia *kademlia) StoreFile(filePath string) {
 	file, err := os.Open(filePath)
-	if err != nil{
+	if err != nil {
 		fmt.Println(err)
 		return
 	}
 
 	h := sha1.New()
 	_, err = io.Copy(h, file)
-	if err != nil{
+	if err != nil {
 		fmt.Println(err)
 		return
 	}
@@ -302,7 +309,7 @@ func (kademlia *kademlia) StoreFile(filePath string) {
 
 	hash := h.Sum(nil)
 	newFileName := hex.EncodeToString(hash)
-	newPath := storagePath+"/"+newFileName
+	newPath := storagePath + "/" + newFileName
 	os.Rename(filePath, newPath)
 
 	//Need to use the result from lookUpProcedure

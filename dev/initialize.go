@@ -56,6 +56,7 @@ func main() {
 	network.SetPort(iOwnPort)
 	network.SetHandler(kadem)
 	net := network.GetInstance()
+	kadem.SetNetworkHandler(net)
 
 	go net.Listen()
 	if performJoin {
