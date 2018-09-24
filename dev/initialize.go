@@ -7,6 +7,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"sync"
 
 	"./kademlia"
 	"./network"
@@ -60,7 +61,10 @@ func main() {
 
 	go net.Listen()
 	if performJoin {
-		go kadem.Join(ip, iPort)
+		var wg sync.WaitGroup
+		wg.Add(1)
+		go kadem.Join(ip, iPort, &wg)
+		wg.Wait()
 	}
 
 	var action, param1 string

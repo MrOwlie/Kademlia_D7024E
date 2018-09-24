@@ -277,7 +277,7 @@ func (kademlia *kademlia) Store(data []byte) {
 	// TODO
 }
 
-func (kademlia *kademlia) Join(ip string, port int) {
+func (kademlia *kademlia) Join(ip string, port int, wg *sync.WaitGroup) {
 	fmt.Printf("joining %q on port %d", ip, port)
 	rpcID := d7024e.NewRandomKademliaID()
 	bootstrapContact := d7024e.NewContact(d7024e.NewRandomKademliaID(), fmt.Sprintf("%s:%d", ip, port))
@@ -296,6 +296,7 @@ func (kademlia *kademlia) Join(ip string, port int) {
 	for _, contact := range contacts.Closest {
 		routingTable.GetInstance().AddContact(contact)
 	}
+	wg.Done()
 
 }
 
