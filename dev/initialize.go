@@ -59,7 +59,11 @@ func main() {
 	net := network.GetInstance()
 	kadem.SetNetworkHandler(net)
 
-	go net.Listen()
+	var wgl sync.WaitGroup
+	wgl.Add(1)
+	go net.Listen(&wgl)
+	wgl.Wait()
+
 	if performJoin {
 		var wg sync.WaitGroup
 		wg.Add(1)
@@ -82,11 +86,11 @@ func main() {
 		case action == "exit":
 			return
 		case action == "store":
-			data, err := ioutil.ReadFile(param1)
+			_, err := ioutil.ReadFile(param1)
 			if err != nil {
 				fmt.Println("An error occured while reading the file!")
 			} else {
-				kadem.Store(data)
+				kadem.Store("hej")
 			}
 		case action == "fetch":
 			kadem.LookupData(param1)

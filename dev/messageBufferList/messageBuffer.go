@@ -11,18 +11,18 @@ const messageBufferTimeout = 5
 
 type messageBuffer struct {
 	RPCID          *d7024e.KademliaID
-	MessageChannel chan rpc.Message
+	MessageChannel chan *rpc.Message
 	latestResponse time.Time
 }
 
-func NewMessageBuffer(id *d7024e.KademliaID, channel chan rpc.Message) *messageBuffer {
+func NewMessageBuffer(id *d7024e.KademliaID) *messageBuffer {
 	mb := &messageBuffer{}
 	mb.RPCID = id
-	mb.MessageChannel = channel
+	mb.MessageChannel = make(chan *rpc.Message)
 	return mb
 }
 
-func (mb *messageBuffer) AppendMessage(message rpc.Message) {
+func (mb *messageBuffer) AppendMessage(message *rpc.Message) {
 	mb.MessageChannel <- message
 	mb.latestResponse = time.Now()
 }

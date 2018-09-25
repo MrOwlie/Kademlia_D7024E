@@ -38,17 +38,18 @@ func (kademlia *kademlia) HandleIncomingRPC(data []byte, addr string) {
 		json.Unmarshal(message.RpcData, &find_node)
 		kademlia.handleFindValue(message.RpcId, find_node, addr)
 
-	case rpc.TIME_OUT:
-		kademlia.HandleTimeout(message.RpcId)
+	/*case rpc.TIME_OUT:
+	kademlia.HandleTimeout(message.RpcId)*/
 
 	default:
 		if message.RpcType == rpc.CLOSEST_NODES || message.RpcType == rpc.PONG {
 			buffer_list := messageBufferList.GetInstance()
 			m_buffer, hasId := buffer_list.GetMessageBuffer(&message.RpcId)
 			if hasId {
-				m_buffer.AppendMessage(message)
+				m_buffer.AppendMessage(&message)
+				fmt.Println("appended msg")
 			} else {
-				fmt.Println("Message with rpc id: %v was discarded", message.RpcId)
+				fmt.Printf("Message with rpc id: %v was discarded", message.RpcId)
 			}
 		} else {
 			fmt.Println("Invalid message")
