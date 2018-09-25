@@ -65,7 +65,6 @@ func (kademlia *kademlia) handleFindNode(rpc_id d7024e.KademliaID, find_node rpc
 	rt := routingTable.GetInstance()
 	closest_nodes := rpc.ClosestNodes{rt.FindClosestContacts(&find_node.NodeId, 20)}
 	response, err := rpc.Marshal(rpc.CLOSEST_NODES, rpc_id, *rt.Me.ID, closest_nodes)
-	fmt.Println("sending contacts: ", closest_nodes)
 
 	if err != nil {
 		fmt.Println(err)

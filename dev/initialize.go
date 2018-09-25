@@ -67,6 +67,9 @@ func main() {
 	if performJoin && !kadem.Join(ip, iPort) {
 		return
 	}
+	if performJoin {
+		kadem.IdleBucketReExploration()
+	}
 
 	var action, param1 string
 	for {

@@ -21,6 +21,7 @@ type Bucket struct {
 func NewBucket() *Bucket {
 	bucket := &Bucket{}
 	bucket.List = list.New()
+	bucket.latestLookup = time.Now().Add(-24 * time.Hour)
 	return bucket
 }
 

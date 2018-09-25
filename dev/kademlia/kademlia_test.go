@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"strings"
+	"sync"
 	"testing"
 
 	"../d7024e"
@@ -21,9 +22,13 @@ type testNetworkControl struct {
 
 type testNetwork struct {
 	CheckList []testNetworkControl
+	sendMutex sync.Mutex
 }
 
 func (net *testNetwork) SendMessage(addr string, data *[]byte) {
+	net.sendMutex.Lock()
+	defer net.sendMutex.Unlock()
+
 	checkData := net.CheckList[0]
 	if len(net.CheckList) > 1 {
 		net.CheckList = net.CheckList[1:]
@@ -105,14 +110,60 @@ func TestJoin(t *testing.T) {
 
 	contacts := rt.FindClosestContacts(d7024e.NewKademliaID("FFFFFFFFF0000000000000000000000000000000"), 10)
 	assertEqual(t, len(contacts), 7)
-	fmt.Println("Correct number of contacts where inserted")
+	fmt.Println("Correct number of contacts where inserted!")
 	for _, c := range contacts {
 		assertEqual(t, checkMap[strings.ToUpper(c.ID.String())], true)
 		assertEqual(t, checkMap[c.Address], true)
 		checkMap[c.ID.String()] = false
 		checkMap[c.Address] = false
 	}
-	fmt.Println("Inserted contacts had right values")
+	fmt.Println("Inserted contacts had right values!")
+
+}
+
+func TestBucketReExploration(t *testing.T) {
+	kadem := GetInstance()
+	rt := routingTable.GetInstance()
+	rt.Me.ID = d7024e.NewKademliaID("0000000000000000000000000000000000000000")
+	rt.AddContact(d7024e.NewContact(d7024e.NewKademliaID("0000000000000000000000000000000000000006"), "localhost:8000"))
+	checkMap := make(map[int]bool)
+	for i := 0; i < 157; i++ {
+		checkMap[i] = true
+	}
+	checkMap[158] = true
+	checkMap[159] = true
+	var callsMade sync.WaitGroup
+	callsMade.Add(159)
+
+	var cList []testNetworkControl
+	for a := 0; a < 159; a++ {
+		cList = append(cList, testNetworkControl{
+			func(sentMessage rpc.Message) {
+
+				var sentPayload rpc.FindNode
+				json.Unmarshal(sentMessage.RpcData, &sentPayload)
+				index := rt.GetBucketIndex(&sentPayload.NodeId)
+
+				assertEqual(t, sentMessage.RpcType, rpc.FIND_NODE)
+				fmt.Println("RPC Type is correct for index ", index)
+				assertEqual(t, rt.Me.ID.Equals(&sentMessage.SenderId), true)
+				fmt.Println("Sender ID is correct for index ", index)
+
+				assertEqual(t, checkMap[index], true)
+				checkMap[index] = false
+				fmt.Println("FIND_NODE ID is within an unqueried bucket, index ", index)
+
+				callsMade.Done()
+
+			},
+		})
+	}
+
+	net := testNetwork{}
+	net.CheckList = cList
+	kadem.SetNetworkHandler(&net)
+	kadem.IdleBucketReExploration()
+	callsMade.Wait()
 
 }
 

@@ -25,22 +25,26 @@ func scheduleMessageBufferListGarbageCollect() {
 }
 
 func scheduleIdleBucketReExploration() {
-	rTable := routingTable.GetInstance()
 	ticker := time.NewTicker(5 * time.Minute)
 
 	go func() {
-		kademlia := GetInstance()
 		for {
 			select {
 			case <-ticker.C:
-				var kademliaIDs []*d7024e.KademliaID = rTable.GetRefreshIDs()
-
-				for i := 0; i < len(kademliaIDs); i++ {
-					go kademlia.lookupProcedure(procedureContacts, kademliaIDs[i])
-				}
+				kademlia := GetInstance()
+				kademlia.IdleBucketReExploration()
 			}
 		}
 	}()
+}
+
+func (kademlia *kademlia) IdleBucketReExploration() {
+	rTable := routingTable.GetInstance()
+	var kademliaIDs []*d7024e.KademliaID = rTable.GetRefreshIDs()
+
+	for i := 0; i < len(kademliaIDs); i++ {
+		go kademlia.lookupProcedure(procedureContacts, kademliaIDs[i])
+	}
 }
 
 func scheduleFileRepublish() {
