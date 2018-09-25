@@ -1,13 +1,13 @@
 package kademlia
 
 import (
-	"time"
 	"os"
+	"time"
 
 	"../d7024e"
 	"../messageBufferList"
-	"../routingTable"
 	"../metadata"
+	"../routingTable"
 )
 
 func scheduleMessageBufferListGarbageCollect() {

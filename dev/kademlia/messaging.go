@@ -38,6 +38,9 @@ func (kademlia *kademlia) HandleIncomingRPC(data []byte, addr string) {
 		json.Unmarshal(message.RpcData, &find_node)
 		kademlia.handleFindValue(message.RpcId, find_node, addr)
 
+	case rpc.TIME_OUT:
+		kademlia.HandleTimeout(message.RpcId)
+
 	default:
 		if message.RpcType == rpc.CLOSEST_NODES || message.RpcType == rpc.PONG {
 			buffer_list := messageBufferList.GetInstance()

@@ -13,6 +13,7 @@ const HAS_VALUE = "find_value"
 const STORE = "store"
 const PING = "ping"
 const PONG = "pong"
+const TIME_OUT = "time_out"
 
 type Message struct {
 	RpcType  string
