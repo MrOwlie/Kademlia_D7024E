@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	
 
 	"../d7024e"
 	"../messageBufferList"
@@ -36,6 +37,11 @@ func (kademlia *kademlia) HandleIncomingRPC(data []byte, addr string) {
 	case rpc.FIND_VALUE:
 		var find_node rpc.FindNode
 		json.Unmarshal(message.RpcData, &find_node)
+		kademlia.handleFindValue(message.RpcId, find_node, addr)
+
+	case rpc.STORE:
+		var store_file rpc.StoreFile
+		json.Unmarshal(message.RpcData, &store_file)
 		kademlia.handleFindValue(message.RpcId, find_node, addr)
 
 	default:
@@ -104,6 +110,21 @@ func (kademlia *kademlia) handleFindValue(rpc_id d7024e.KademliaID, find_node rp
 	kademlia.network.SendMessage(addr, &response)
 }
 
+func (kademlia *kademlia) handleStore(store_file *rpc.StoreFile, addr string){
+	var hostURL string
+	hash := hex.EncodeToString(store_file.FileHash)
+	filePath := storagePath+hash
+
+	if store_file.Host == rpc.SENDER {
+		hostURL = addr
+	} else {
+		hostURL = rpc.Host
+	}
+
+	hostURL += "/storage/" + hash
+	kademlia.network.FetchFile(hostURL, filePath)
+}
+
 func (kademlia *kademlia) sendPingMessage(contact *d7024e.Contact, rpc_id *d7024e.KademliaID) {
 	rt := routingTable.GetInstance()
 	data, m_err := json.Marshal(rpc.Message{RpcType: rpc.PING, RpcId: *rpc_id, SenderId: *rt.Me.ID, RpcData: []byte{byte(0)}})
@@ -151,9 +172,9 @@ func (kademlia *kademlia) sendFindDataMessage(contact *d7024e.Contact, toFind *d
 	kademlia.network.SendMessage(contact.Address, &data)
 }
 
-func (kademlia *kademlia) sendStoreMessage(contact *d7024e.Contact, rpc_id *d7024e.KademliaID, fileHash *d7024e.KademliaID) {
+func (kademlia *kademlia) sendStoreMessage(contact *d7024e.Contact, rpc_id *d7024e.KademliaID, fileHash *d7024e.KademliaID, host string) {
 	rt := routingTable.GetInstance()
-	data, err := rpc.Marshal(rpc.STORE, *rpc_id, *rt.Me.ID, rpc.StoreFile{*fileHash})
+	data, err := rpc.Marshal(rpc.STORE, *rpc_id, *rt.Me.ID, rpc.StoreFile{*fileHash, host})
 	if err != nil {
 		fmt.Println(err)
 	}

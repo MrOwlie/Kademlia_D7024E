@@ -14,6 +14,8 @@ const STORE = "store"
 const PING = "ping"
 const PONG = "pong"
 
+const SENDER = "sender" 
+
 type Message struct {
 	RpcType  string
 	RpcId    d7024e.KademliaID
@@ -31,6 +33,7 @@ type ClosestNodes struct {
 
 type StoreFile struct {
 	FileHash d7024e.KademliaID
+	Host string
 }
 
 func Marshal(rpc_type string, rpc_id d7024e.KademliaID, sender_id d7024e.KademliaID, rpc_data interface{}) ([]byte, error) {

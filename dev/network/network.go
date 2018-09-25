@@ -12,7 +12,7 @@ import (
 )
 
 const MAX_PACKET_SIZE int = 5120 //TODO Calculate actual max packet size.
-const storagePath string = "/kademlia/storage"
+var storagePath string = "/kademlia/storage/"
 
 type Handler interface {
 	HandleIncomingRPC([]byte, string)
@@ -92,42 +92,40 @@ func (network *network) SendMessage(addr string, data *[]byte) {
 	//conn.Close()
 }
 
-func ListenFileServer(ip string, port int) {
+func (network *network) ListenFileServer() {
 	http.Handle("/", http.FileServer(http.Dir(storagePath)))
-	err := http.ListenAndServe(":"+strconv.Itoa(port), nil)
+	err := http.ListenAndServe(":"+strconv.Itoa(network.port), nil)
 	if err != nil {
 		fmt.Println(err)
 	}
 }
 
-func FetchFile(url string, fileName string) (error, string) {
-	filePath := ""
+func (network *network) FetchFile(url string, filePath string) error {
 
 	resp, err := http.Get(url)
 	if err != nil {
 		fmt.Println(err)
-		return err, filePath
+		return err
 	}
 	defer resp.Body.Close()
 
 	if resp.Status == "200 OK" {
 
-		filePath = storagePath + "/" + fileName
 		file, err := os.Create(filePath)
 		if err != nil {
 			fmt.Println(err)
-			return err, filePath
+			return err
 		}
 		defer file.Close()
 
 		_, err = io.Copy(file, resp.Body)
 		if err != nil {
 			fmt.Println(err)
-			return err, filePath
+			return err
 		}
 
 	} else {
-		return errors.New(resp.Status), filePath
+		return errors.New(resp.Status)
 	}
-	return nil, filePath 
+	return nil
 }
