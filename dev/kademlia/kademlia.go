@@ -19,7 +19,6 @@ import (
 )
 
 type NetworkHandler interface {
-	Listen()
 	SendMessage(string, *[]byte)
 	FetchFile(string, string)
 }
@@ -35,7 +34,6 @@ type kademliaMessage struct {
 
 var instance *kademlia
 var once sync.Once
-var selfContact d7024e.Contact = d7024e.NewContact(d7024e.NewRandomKademliaID(), "localhost")
 
 var storagePath string = "/kademlia/storage/"
 var downLoadPath string = "/kademlia/dowloads/" 
@@ -133,7 +131,7 @@ func (kademlia *kademlia) lookupProcedure(procedureType int, target *d7024e.Kade
 						if ok {
 							if x.returnType == returnContacts {
 								for i, c := range x.contacts {
-									if c.ID == selfContact.ID {
+									if c.ID == rTable.Me.ID {
 										x.contacts = append(x.contacts[0:i-1], x.contacts[i+1:len(x.contacts)]...)
 									}
 								}
@@ -173,7 +171,7 @@ func (kademlia *kademlia) lookupProcedure(procedureType int, target *d7024e.Kade
 					if ok {
 						if x.returnType == returnContacts {
 							for i, c := range x.contacts {
-								if c.ID == selfContact.ID {
+								if c.ID == rTable.Me.ID {
 									x.contacts = append(x.contacts[0:i-1], x.contacts[i+1:len(x.contacts)]...)
 								}
 							}
@@ -238,7 +236,7 @@ func (kademlia *kademlia) lookupProcedure(procedureType int, target *d7024e.Kade
 						if ok {
 							if x.returnType == returnContacts {
 								for i, c := range x.contacts {
-									if c.ID == selfContact.ID {
+									if c.ID == rTable.Me.ID {
 										x.contacts = append(x.contacts[0:i-1], x.contacts[i+1:len(x.contacts)]...)
 									}
 								}
@@ -289,8 +287,7 @@ func (kademlia *kademlia) lookupSubProcedure(target d7024e.Contact, toFind *d702
 	}
 
 	//wait until a response is retrieved
-	mBuffer.WaitForResponse()
-	message := mBuffer.ExtractMessage()
+	message := <-mBuffer.MessageChannel
 
 	//Return different flags and payload depending on file is found or contacts is returned
 	if message.RpcType == rpc.CLOSEST_NODES {
@@ -363,28 +360,32 @@ func (kademlia *kademlia) Join(ip string, port int, wg *sync.WaitGroup) {
 	mBuffer := messageBufferList.NewMessageBuffer(rpcID)
 	mBufferList := messageBufferList.GetInstance()
 	mBufferList.AddMessageBuffer(mBuffer)
+	rt := routingTable.GetInstance()
 
-	kademlia.sendFindContactMessage(&bootstrapContact, selfContact.ID, rpcID)
+	retry := 0
+	for retry < 3 {
+		fmt.Printf("Trying to connect. Try number %d", retry)
+		kademlia.sendFindContactMessage(&bootstrapContact, rt.Me.ID, rpcID)
 
-	//wait until a response is
-	mBuffer.WaitForResponse()
-	message := mBuffer.ExtractMessage()
+		//wait until a response is
+		message := <-mBuffer.MessageChannel
+		fmt.Println("got through channel")
 
-	var contacts rpc.ClosestNodes = rpc.ClosestNodes{}
-	json.Unmarshal(message.RpcData, &contacts)
-	for _, contact := range contacts.Closest {
-		routingTable.GetInstance().AddContact(contact)
+		if message.RpcType == rpc.CLOSEST_NODES {
+
+			var contacts rpc.ClosestNodes = rpc.ClosestNodes{}
+			json.Unmarshal(message.RpcData, &contacts)
+			for _, contact := range contacts.Closest {
+				routingTable.GetInstance().AddContact(contact)
+			}
+			wg.Done()
+			return
+		}
+		rpcID = d7024e.NewRandomKademliaID()
+		retry++
 	}
-	wg.Done()
+	fmt.Printf("Failed to join network after three tries. Please try to connect to another node.")
 
-}
-
-func (kademlia *kademlia) ReturnLookupContact(target *d7024e.Contact) {
-	// TODO
-}
-
-func (kademlia *kademlia) ReturnLookupData(hash string) {
-	// TODO
 }
 
 func (kademlia *kademlia) addContact(contact *d7024e.Contact) {
@@ -406,8 +407,7 @@ func (kademlia *kademlia) addContact(contact *d7024e.Contact) {
 
 		fmt.Println("sent ping message from bucket")
 
-		mBuffer.WaitForResponse()
-		message := mBuffer.ExtractMessage()
+		message := <-mBuffer.MessageChannel
 		fmt.Println("ping executed")
 
 		if message.RpcType == rpc.PONG {

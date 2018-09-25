@@ -1,13 +1,13 @@
 package kademlia
 
 import (
-	"time"
 	"os"
+	"time"
 
 	"../d7024e"
 	"../messageBufferList"
-	"../routingTable"
 	"../metadata"
+	"../routingTable"
 )
 
 func scheduleMessageBufferListGarbageCollect() {
@@ -67,7 +67,7 @@ func scheduleCacheExpiredFileDeletion() {
 	ticker := time.NewTicker(5 * time.Minute)
 
 	go func() {
-		kademlia := GetInstance()
+		//kademlia := GetInstance()
 		for {
 			select {
 			case <-ticker.C:

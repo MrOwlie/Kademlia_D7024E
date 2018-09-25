@@ -1,6 +1,7 @@
 package network
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"net"
@@ -8,7 +9,6 @@ import (
 	"os"
 	"strconv"
 	"sync"
-	"errors"
 )
 
 const MAX_PACKET_SIZE int = 5120 //TODO Calculate actual max packet size.
@@ -47,7 +47,7 @@ func SetHandler(h Handler) {
 	GetInstance().msgHandle = h
 }
 
-func (network *network) Listen() {
+func (network *network) Listen(wg *sync.WaitGroup) {
 	serverAddr, addrErr := net.ResolveUDPAddr("udp", ":"+strconv.Itoa(network.port))
 	if addrErr != nil {
 		return
@@ -61,6 +61,7 @@ func (network *network) Listen() {
 	defer conn.Close()
 
 	fmt.Println("Listening to UDP traffic on port " + strconv.Itoa(network.port))
+	wg.Done()
 	for {
 		var data [MAX_PACKET_SIZE]byte
 		n, addr, err := conn.ReadFromUDP(data[0:])
@@ -75,7 +76,6 @@ func (network *network) Listen() {
 }
 
 func (network *network) SendMessage(addr string, data *[]byte) {
-
 	laddr, l_err := net.ResolveUDPAddr("udp", addr)
 
 	if l_err != nil {
