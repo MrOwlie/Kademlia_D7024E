@@ -55,7 +55,7 @@ func scheduleFileRepublish() {
 				fileHashes := metaData.FilesToRepublish()
 
 				for i := 0; i < len(fileHashes); i++ {
-					go kademlia.Store(fileHashes[i])
+					go kademlia.StoreFile(fileHashes[i])
 				}
 			}
 		}

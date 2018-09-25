@@ -19,10 +19,11 @@ type Handler interface {
 }
 
 type network struct {
-	port      int
-	ip        string
-	conn      *net.UDPConn
-	msgHandle Handler
+	port         int
+	ip           string
+	conn         *net.UDPConn
+	msgHandle    Handler
+	sendingMutex sync.Mutex
 }
 
 var instance *network
@@ -76,6 +77,9 @@ func (network *network) Listen(wg *sync.WaitGroup) {
 }
 
 func (network *network) SendMessage(addr string, data *[]byte) {
+	network.sendingMutex.Lock()
+	defer network.sendingMutex.Unlock()
+
 	laddr, l_err := net.ResolveUDPAddr("udp", addr)
 
 	if l_err != nil {

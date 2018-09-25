@@ -1,6 +1,7 @@
 package messageBufferList
 
 import (
+	"fmt"
 	"time"
 
 	"../d7024e"
@@ -23,6 +24,7 @@ func NewMessageBuffer(id *d7024e.KademliaID) *messageBuffer {
 }
 
 func (mb *messageBuffer) AppendMessage(message *rpc.Message) {
+	fmt.Println("appending message")
 	mb.MessageChannel <- message
 	mb.latestResponse = time.Now()
 }
