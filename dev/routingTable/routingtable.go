@@ -37,12 +37,23 @@ func newRoutingTable() *routingTable {
 }
 
 // AddContact add a new contact to the correct Bucket
-func (routingTable *routingTable) AddContact(contact d7024e.Contact) {
+func (routingTable *routingTable) AddContact(contact d7024e.Contact) (*d7024e.Contact, bool) {
 	bucketIndex := routingTable.GetBucketIndex(contact.ID)
 	bucket := routingTable.Buckets[bucketIndex]
 	if !routingTable.Me.ID.Equals(contact.ID) {
-		bucket.AddContact(contact)
+		return bucket.AddContact(contact)
 	}
+	return nil, true
+}
+
+// RemoveContact removes the front contact from the correct Bucket and appends a new one
+func (routingTable *routingTable) ReplaceLastSeenNode(old d7024e.Contact, new d7024e.Contact) (*d7024e.Contact, bool) {
+	bucketIndex := routingTable.GetBucketIndex(new.ID)
+	bucket := routingTable.Buckets[bucketIndex]
+	if !routingTable.Me.ID.Equals(new.ID) {
+		return bucket.PopAndAppend(old, new)
+	}
+	return nil, true
 }
 
 // FindClosestContacts finds the count closest Contacts to the target in the RoutingTable

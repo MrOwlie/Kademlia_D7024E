@@ -22,7 +22,9 @@ func (kademlia *kademlia) HandleIncomingRPC(data []byte, addr string) {
 	}
 
 	//Update contact
-	routingTable.GetInstance().AddContact(d7024e.NewContact(&message.SenderId, addr))
+	fmt.Println("adding contact ", addr)
+	con := d7024e.NewContact(&message.SenderId, addr)
+	kademlia.addContact(&con)
 	switch message.RpcType {
 
 	case rpc.FIND_NODE:

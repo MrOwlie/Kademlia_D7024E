@@ -388,35 +388,40 @@ func (kademlia *kademlia) Join(ip string, port int) bool {
 func (kademlia *kademlia) addContact(contact *d7024e.Contact) {
 
 	rt := routingTable.GetInstance()
+	pingContact, inserted := rt.AddContact(*contact)
 
-	bucket := rt.Buckets[rt.GetBucketIndex(contact.ID)]
+	if !inserted {
+		go func() {
+			iPingContact := pingContact
+			iInserted := inserted
+			iContact := contact
+			for {
+				rpcID := d7024e.NewRandomKademliaID()
+				mBuffer := messageBufferList.NewMessageBuffer(rpcID)
+				mBufferList := messageBufferList.GetInstance()
+				mBufferList.AddMessageBuffer(mBuffer)
 
-	if bucket.IsFull() {
-		kademlia := GetInstance()
-		rpcID := d7024e.NewRandomKademliaID()
-		pingContact := bucket.List.Front().Value.(d7024e.Contact)
-		pingContactElement := bucket.List.Front()
-		mBuffer := messageBufferList.NewMessageBuffer(rpcID)
-		mBufferList := messageBufferList.GetInstance()
-		mBufferList.AddMessageBuffer(mBuffer)
+				kademlia.sendPingMessage(iPingContact, rpcID)
 
-		kademlia.sendPingMessage(&pingContact, rpcID)
+				fmt.Println("sent ping message from bucket")
 
-		fmt.Println("sent ping message from bucket")
+				message := <-mBuffer.MessageChannel
+				fmt.Println("ping executed")
 
-		message := <-mBuffer.MessageChannel
-		fmt.Println("ping executed")
+				if message.RpcType == rpc.PONG {
+					fmt.Println("ping responded successfully, node alive.")
+					rt.AddContact(*iPingContact)
+					return
+				} else {
+					fmt.Println("ping without response, node dead.")
+					iPingContact, iInserted = rt.ReplaceLastSeenNode(*iPingContact, *iContact)
+					if iInserted {
 
-		if message.RpcType == rpc.PONG {
-			fmt.Println("ping responded successfully, node alive.")
-			bucket.AddContact(pingContact)
-		} else {
-			fmt.Println("ping without response, node dead.")
-			bucket.List.Remove(pingContactElement)
-			bucket.AddContact(*contact)
-		}
-	} else {
-		bucket.AddContact(*contact)
+						return
+					}
+				}
+			}
+		}()
 	}
 
 }

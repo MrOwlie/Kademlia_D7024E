@@ -27,7 +27,7 @@ func NewBucket() *Bucket {
 
 // AddContact adds the Contact to the front of the bucket
 // or moves it to the front of the bucket if it already existed
-func (bucket *Bucket) AddContact(contact Contact) {
+func (bucket *Bucket) AddContact(contact Contact) (*Contact, bool) {
 	//fmt.Println("contact added: ", contact)
 	var element *list.Element
 	bucket.mutex.Lock()
@@ -45,10 +45,35 @@ func (bucket *Bucket) AddContact(contact Contact) {
 	if element == nil {
 		if bucket.List.Len() < bucketSize {
 			bucket.List.PushBack(contact)
+		} else {
+			retval := bucket.List.Front().Value.(Contact)
+			return &retval, false
 		}
 	} else {
 		bucket.List.MoveToBack(element)
 	}
+	return nil, true
+}
+
+// PopAndAppend forcefully removes the front contact and appends a new one
+func (bucket *Bucket) PopAndAppend(old Contact, new Contact) (*Contact, bool) {
+	//fmt.Println("contact added: ", contact)
+	bucket.mutex.Lock()
+	defer bucket.mutex.Unlock()
+
+	if bucket.List.Len() > 0 {
+		e := bucket.List.Front()
+		con := e.Value.(Contact)
+		if con.ID.Equals(old.ID) {
+			bucket.List.Remove(e)
+			bucket.List.PushBack(new)
+			return nil, true
+		}
+		return &con, false
+	}
+	bucket.List.PushBack(new)
+	return nil, true
+
 }
 
 // GetContactAndCalcDistance returns an array of Contacts where

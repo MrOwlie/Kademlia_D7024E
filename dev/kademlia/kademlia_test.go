@@ -6,6 +6,7 @@ import (
 	"strings"
 	"sync"
 	"testing"
+	"time"
 
 	"../d7024e"
 	"../messageBufferList"
@@ -27,6 +28,7 @@ type testNetwork struct {
 }
 
 func (net *testNetwork) SendMessage(addr string, data *[]byte) {
+	fmt.Println(string(*data))
 	net.sendMutex.Lock()
 	defer net.sendMutex.Unlock()
 
@@ -172,6 +174,9 @@ func TestAddContact(t *testing.T) {
 	rt := routingTable.GetInstance()
 	kadem := GetInstance()
 	rt.Me.ID = d7024e.NewKademliaID("FFFF000000000000000000000000000000000000")
+	var wg1, wg2 sync.WaitGroup
+	wg1.Add(1)
+	wg2.Add(1)
 
 	checkdata := make(map[string]bool)
 
@@ -185,7 +190,6 @@ func TestAddContact(t *testing.T) {
 	var cList []testNetworkControl
 	cList = append(cList, testNetworkControl{
 		func(sentMessage rpc.Message, addr string) {
-			fmt.Println(addr)
 			assertEqual(t, addr, "10.10.10.10:1000")
 			fmt.Println("Last seen node is queried!")
 
@@ -198,7 +202,7 @@ func TestAddContact(t *testing.T) {
 			d, _ := json.Marshal(returnMessage)
 
 			GetInstance().HandleIncomingRPC(d, addr)
-
+			wg1.Done()
 		},
 	})
 	cList = append(cList, testNetworkControl{
@@ -217,7 +221,8 @@ func TestAddContact(t *testing.T) {
 			mbList := messageBufferList.GetInstance()
 			buffer, _ := mbList.GetMessageBuffer(&sentMessage.RpcId)
 			buffer.AppendMessage(&returnMessage)
-
+			time.Sleep(2 * time.Second)
+			wg2.Done()
 		},
 	})
 
@@ -248,9 +253,12 @@ func TestAddContact(t *testing.T) {
 
 	//should be discarded
 	kadem.addContact(init("F000000000000000000000000000000000000015", "10.10.10.30:1000"))
+	wg1.Wait()
 
 	//should replace 10.10.10.11
 	kadem.addContact(init("F000000000000000000000000000000000000016", "10.10.10.31:1000"))
+	wg2.Wait()
+
 	checkdata["F000000000000000000000000000000000000001"] = false
 	checkdata["10.10.10.11:1000"] = false
 	checkdata["F000000000000000000000000000000000000016"] = true
@@ -259,6 +267,7 @@ func TestAddContact(t *testing.T) {
 	contacts := rt.FindClosestContacts(d7024e.NewKademliaID("F000000000000000000000000000000000000000"), 20)
 	nrC := 20
 	for _, c := range contacts {
+		fmt.Println("testing ", c.Address)
 		assertEqual(t, checkdata[strings.ToUpper(c.ID.String())], true)
 		assertEqual(t, checkdata[c.Address], true)
 		checkdata[strings.ToUpper(c.ID.String())] = false
@@ -267,6 +276,42 @@ func TestAddContact(t *testing.T) {
 	}
 	fmt.Println("All correct contacts was found! ")
 	assertEqual(t, nrC, 0)
+}
+
+func TestPing(t *testing.T) {
+	rt := routingTable.GetInstance()
+	kadem := GetInstance()
+	var wg1 sync.WaitGroup
+	wg1.Add(1)
+
+	RpcId := d7024e.NewRandomKademliaID()
+	SendId := d7024e.NewRandomKademliaID()
+
+	var cList []testNetworkControl
+	cList = append(cList, testNetworkControl{
+		func(sentMessage rpc.Message, addr string) {
+			assertEqual(t, addr, "10.10.10.10:1000")
+			fmt.Println("correct address is responded to!")
+
+			assertEqual(t, sentMessage.RpcType, rpc.PONG)
+			fmt.Println("RPC Type is correct!")
+			assertEqual(t, rt.Me.ID.Equals(&sentMessage.SenderId), true)
+			fmt.Println("Sender ID is correct!")
+			assertEqual(t, RpcId.Equals(&sentMessage.RpcId), true)
+			fmt.Println("Correct RPCID is used!")
+
+			wg1.Done()
+		},
+	})
+
+	msg := rpc.Message{rpc.PING, *RpcId, *SendId, []byte{byte(0)}}
+	d, _ := json.Marshal(msg)
+
+	net := testNetwork{}
+	net.CheckList = cList
+
+	kadem.HandleIncomingRPC(d, "10.10.10.10:1000")
+	wg1.Wait()
 }
 
 func helperReturnMarshal(data interface{}) []byte {
