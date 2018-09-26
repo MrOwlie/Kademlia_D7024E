@@ -97,7 +97,7 @@ func (network *network) SendMessage(addr string, data *[]byte) {
 }
 
 func (network *network) ListenFileServer() {
-	http.Handle("/", http.FileServer(http.Dir(storagePath)))
+	http.Handle("/storage", http.FileServer(http.Dir(storagePath)))
 	err := http.ListenAndServe(":"+strconv.Itoa(network.port), nil)
 	if err != nil {
 		fmt.Println(err)

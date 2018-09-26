@@ -138,7 +138,7 @@ func (kademlia *kademlia) lookupProcedure(procedureType int, target *d7024e.Kade
 								candids.Append(x.contacts)
 							} else if x.returnType == returnHasValue {
 								for i, c := range candids.Contacts {
-									if c.ID == x.contacts[0].ID {
+									if c.ID == candids.Contacts[0].ID {
 										candids.Contacts = append(candids.Contacts[0:i-1], candids.Contacts[i+1:len(candids.Contacts)]...)
 									}
 								}
@@ -242,7 +242,7 @@ func (kademlia *kademlia) lookupProcedure(procedureType int, target *d7024e.Kade
 								candids.Append(x.contacts)
 							} else if x.returnType == returnHasValue {
 								for i, c := range candids.Contacts {
-									if c.ID == x.contacts[0].ID {
+									if c.ID == candids.Contacts[0].ID {
 										candids.Contacts = append(candids.Contacts[0:i-1], candids.Contacts[i+1:len(candids.Contacts)]...)
 									}
 								}
