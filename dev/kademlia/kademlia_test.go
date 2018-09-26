@@ -40,7 +40,7 @@ func (net *testNetwork) SendMessage(addr string, data *[]byte) {
 	var sentMessage = rpc.Message{}
 	json.Unmarshal(*data, &sentMessage)
 
-	checkData.CheckFunction(sentMessage, addr)
+	go checkData.CheckFunction(sentMessage, addr)
 
 }
 
@@ -82,7 +82,7 @@ func TestJoin(t *testing.T) {
 				}
 				d, _ := json.Marshal(returnMessage)
 
-				go GetInstance().HandleIncomingRPC(d, "10.10.10.10:1000")
+				GetInstance().HandleIncomingRPC(d, "10.10.10.10:1000")
 
 			},
 		},
@@ -185,7 +185,7 @@ func TestAddContact(t *testing.T) {
 	var cList []testNetworkControl
 	cList = append(cList, testNetworkControl{
 		func(sentMessage rpc.Message, addr string) {
-
+			fmt.Println(addr)
 			assertEqual(t, addr, "10.10.10.10:1000")
 			fmt.Println("Last seen node is queried!")
 
@@ -197,7 +197,7 @@ func TestAddContact(t *testing.T) {
 			returnMessage := rpc.Message{rpc.PONG, sentMessage.RpcId, *d7024e.NewKademliaID("F000000000000000000000000000000000000000"), []byte{byte(0)}}
 			d, _ := json.Marshal(returnMessage)
 
-			go GetInstance().HandleIncomingRPC(d, addr)
+			GetInstance().HandleIncomingRPC(d, addr)
 
 		},
 	})
@@ -216,7 +216,7 @@ func TestAddContact(t *testing.T) {
 
 			mbList := messageBufferList.GetInstance()
 			buffer, _ := mbList.GetMessageBuffer(&sentMessage.RpcId)
-			go buffer.AppendMessage(&returnMessage)
+			buffer.AppendMessage(&returnMessage)
 
 		},
 	})
