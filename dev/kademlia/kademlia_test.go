@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"../d7024e"
+	"../messageBufferList"
 	"../routingTable"
 	"../rpc"
 )
@@ -15,7 +16,7 @@ import (
 var doNotCareID *d7024e.KademliaID = d7024e.NewKademliaID("F000000000000000000000000000000000000000")
 
 type testNetworkControl struct {
-	CheckFunction func(rpc.Message)
+	CheckFunction func(rpc.Message, string)
 	//ReturnMsg     rpc.Message
 	//FromAddress   string
 }
@@ -39,7 +40,7 @@ func (net *testNetwork) SendMessage(addr string, data *[]byte) {
 	var sentMessage = rpc.Message{}
 	json.Unmarshal(*data, &sentMessage)
 
-	checkData.CheckFunction(sentMessage)
+	checkData.CheckFunction(sentMessage, addr)
 
 }
 
@@ -56,7 +57,7 @@ func TestJoin(t *testing.T) {
 	rt := routingTable.GetInstance()
 	cList := []testNetworkControl{
 		testNetworkControl{
-			func(sentMessage rpc.Message) {
+			func(sentMessage rpc.Message, addr string) {
 
 				assertEqual(t, sentMessage.RpcType, rpc.FIND_NODE)
 				fmt.Println("RPC Type is correct!")
@@ -138,7 +139,7 @@ func TestBucketReExploration(t *testing.T) {
 	var cList []testNetworkControl
 	for a := 0; a < 159; a++ {
 		cList = append(cList, testNetworkControl{
-			func(sentMessage rpc.Message) {
+			func(sentMessage rpc.Message, addr string) {
 
 				var sentPayload rpc.FindNode
 				json.Unmarshal(sentMessage.RpcData, &sentPayload)
@@ -165,6 +166,107 @@ func TestBucketReExploration(t *testing.T) {
 	kadem.IdleBucketReExploration()
 	callsMade.Wait()
 
+}
+
+func TestAddContact(t *testing.T) {
+	rt := routingTable.GetInstance()
+	kadem := GetInstance()
+	rt.Me.ID = d7024e.NewKademliaID("FFFF000000000000000000000000000000000000")
+
+	checkdata := make(map[string]bool)
+
+	init := func(id string, ip string) *d7024e.Contact {
+		v := d7024e.NewContact(d7024e.NewKademliaID(id), ip)
+		checkdata[id] = true
+		checkdata[ip] = true
+		return &v
+	}
+
+	var cList []testNetworkControl
+	cList = append(cList, testNetworkControl{
+		func(sentMessage rpc.Message, addr string) {
+
+			assertEqual(t, addr, "10.10.10.10:1000")
+			fmt.Println("Last seen node is queried!")
+
+			assertEqual(t, sentMessage.RpcType, rpc.PING)
+			fmt.Println("RPC Type is correct!")
+			assertEqual(t, rt.Me.ID.Equals(&sentMessage.SenderId), true)
+			fmt.Println("Sender ID is correct!")
+
+			returnMessage := rpc.Message{rpc.PONG, sentMessage.RpcId, *d7024e.NewKademliaID("F000000000000000000000000000000000000000"), []byte{byte(0)}}
+			d, _ := json.Marshal(returnMessage)
+
+			go GetInstance().HandleIncomingRPC(d, addr)
+
+		},
+	})
+	cList = append(cList, testNetworkControl{
+		func(sentMessage rpc.Message, addr string) {
+
+			assertEqual(t, addr, "10.10.10.11:1000")
+			fmt.Println("Last seen node is queried!")
+
+			assertEqual(t, sentMessage.RpcType, rpc.PING)
+			fmt.Println("RPC Type is correct!")
+			assertEqual(t, rt.Me.ID.Equals(&sentMessage.SenderId), true)
+			fmt.Println("Sender ID is correct!")
+
+			returnMessage := rpc.Message{rpc.TIME_OUT, *doNotCareID, *doNotCareID, []byte{byte(0)}}
+
+			mbList := messageBufferList.GetInstance()
+			buffer, _ := mbList.GetMessageBuffer(&sentMessage.RpcId)
+			go buffer.AppendMessage(&returnMessage)
+
+		},
+	})
+
+	net := testNetwork{}
+	net.CheckList = cList
+	kadem.SetNetworkHandler(&net)
+
+	kadem.addContact(init("F000000000000000000000000000000000000000", "10.10.10.10:1000"))
+	kadem.addContact(init("F000000000000000000000000000000000000001", "10.10.10.11:1000"))
+	kadem.addContact(init("F000000000000000000000000000000000000002", "10.10.10.12:1000"))
+	kadem.addContact(init("F000000000000000000000000000000000000003", "10.10.10.13:1000"))
+	kadem.addContact(init("F000000000000000000000000000000000000004", "10.10.10.14:1000"))
+	kadem.addContact(init("F000000000000000000000000000000000000005", "10.10.10.15:1000"))
+	kadem.addContact(init("F000000000000000000000000000000000000006", "10.10.10.16:1000"))
+	kadem.addContact(init("F000000000000000000000000000000000000007", "10.10.10.17:1000"))
+	kadem.addContact(init("F000000000000000000000000000000000000008", "10.10.10.18:1000"))
+	kadem.addContact(init("F000000000000000000000000000000000000009", "10.10.10.19:1000"))
+	kadem.addContact(init("F00000000000000000000000000000000000000A", "10.10.10.20:1000"))
+	kadem.addContact(init("F00000000000000000000000000000000000000B", "10.10.10.21:1000"))
+	kadem.addContact(init("F00000000000000000000000000000000000000C", "10.10.10.22:1000"))
+	kadem.addContact(init("F00000000000000000000000000000000000000D", "10.10.10.23:1000"))
+	kadem.addContact(init("F00000000000000000000000000000000000000E", "10.10.10.24:1000"))
+	kadem.addContact(init("F00000000000000000000000000000000000000F", "10.10.10.25:1000"))
+	kadem.addContact(init("F000000000000000000000000000000000000010", "10.10.10.26:1000"))
+	kadem.addContact(init("F000000000000000000000000000000000000012", "10.10.10.27:1000"))
+	kadem.addContact(init("F000000000000000000000000000000000000013", "10.10.10.28:1000"))
+	kadem.addContact(init("F000000000000000000000000000000000000014", "10.10.10.29:1000"))
+
+	//should be discarded
+	kadem.addContact(init("F000000000000000000000000000000000000015", "10.10.10.30:1000"))
+
+	//should replace 10.10.10.11
+	kadem.addContact(init("F000000000000000000000000000000000000016", "10.10.10.31:1000"))
+	checkdata["F000000000000000000000000000000000000001"] = false
+	checkdata["10.10.10.11:1000"] = false
+	checkdata["F000000000000000000000000000000000000016"] = true
+	checkdata["10.10.10.31:1000"] = true
+
+	contacts := rt.FindClosestContacts(d7024e.NewKademliaID("F000000000000000000000000000000000000000"), 20)
+	nrC := 20
+	for _, c := range contacts {
+		assertEqual(t, checkdata[strings.ToUpper(c.ID.String())], true)
+		assertEqual(t, checkdata[c.Address], true)
+		checkdata[strings.ToUpper(c.ID.String())] = false
+		checkdata[c.Address] = false
+		nrC--
+	}
+	fmt.Println("All correct contacts was found! ")
+	assertEqual(t, nrC, 0)
 }
 
 func helperReturnMarshal(data interface{}) []byte {
