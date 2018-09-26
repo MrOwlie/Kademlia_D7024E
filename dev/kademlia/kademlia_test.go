@@ -128,7 +128,7 @@ func TestFindNode(t *testing.T) {
 
 				expectedRecipitent := recipients[recipientIndex]
 				expectedType := rpc.FIND_NODE
-
+				fmt.Println("expected ", expectedRecipitent.Address, " got ", addr)
 				assertEqual(t, expectedType, msg.RpcType)
 				assertEqual(t, expectedRecipitent.Address, addr)
 
@@ -150,7 +150,7 @@ func TestFindNode(t *testing.T) {
 				byteMsg, _ := json.Marshal(firstResponse)
 				recipientIndex++
 				kadem.HandleIncomingRPC(byteMsg, addr)
-				fmt.Println("ejo")
+
 			},
 		},
 
@@ -159,7 +159,7 @@ func TestFindNode(t *testing.T) {
 
 				expectedRecipitent := recipients[recipientIndex]
 				expectedType := rpc.FIND_NODE
-
+				fmt.Println("expected ", expectedRecipitent.Address, " got ", addr)
 				assertEqual(t, expectedType, msg.RpcType)
 				assertEqual(t, expectedRecipitent.Address, addr)
 
@@ -190,7 +190,7 @@ func TestFindNode(t *testing.T) {
 
 				expectedRecipitent := recipients[recipientIndex]
 				expectedType := rpc.FIND_NODE
-
+				fmt.Println("expected ", expectedRecipitent.Address, " got ", addr)
 				assertEqual(t, expectedType, msg.RpcType)
 				assertEqual(t, expectedRecipitent.Address, addr)
 
@@ -218,7 +218,7 @@ func TestFindNode(t *testing.T) {
 			func(msg rpc.Message, addr string) {
 				expectedRecipitent := recipients[recipientIndex]
 				expectedType := rpc.FIND_NODE
-
+				fmt.Println("expected ", expectedRecipitent.Address, " got ", addr)
 				assertEqual(t, expectedType, msg.RpcType)
 				assertEqual(t, expectedRecipitent.Address, addr)
 
@@ -517,7 +517,9 @@ func helperReturnMarshal(data interface{}) []byte {
 }
 
 func assertEqual(t *testing.T, a interface{}, b interface{}) {
+	fmt.Println("q ", a, " ", b)
 	if a != b {
-		t.Fatalf("%s != %s", a, b)
+		panic(fmt.Sprintf("%s != %s", a, b))
+		//t.Fatalf("%s != %s", a, b)
 	}
 }
