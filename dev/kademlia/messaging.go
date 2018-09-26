@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
-	
 
 	"../d7024e"
 	"../messageBufferList"
@@ -42,7 +41,7 @@ func (kademlia *kademlia) HandleIncomingRPC(data []byte, addr string) {
 	case rpc.STORE:
 		var store_file rpc.StoreFile
 		json.Unmarshal(message.RpcData, &store_file)
-		kademlia.handleFindValue(message.RpcId, store_file, addr)
+		kademlia.handleStore(&store_file, addr)
 
 	/*case rpc.TIME_OUT:
 	kademlia.HandleTimeout(message.RpcId)*/
@@ -53,7 +52,6 @@ func (kademlia *kademlia) HandleIncomingRPC(data []byte, addr string) {
 			m_buffer, hasId := buffer_list.GetMessageBuffer(&message.RpcId)
 			if hasId {
 				m_buffer.AppendMessage(&message)
-				fmt.Println("appended msg")
 			} else {
 				fmt.Printf("Message with rpc id: %v was discarded", message.RpcId)
 			}
@@ -67,7 +65,6 @@ func (kademlia *kademlia) handleFindNode(rpc_id d7024e.KademliaID, find_node rpc
 	rt := routingTable.GetInstance()
 	closest_nodes := rpc.ClosestNodes{rt.FindClosestContacts(&find_node.NodeId, 20)}
 	response, err := rpc.Marshal(rpc.CLOSEST_NODES, rpc_id, *rt.Me.ID, closest_nodes)
-	fmt.Println("sending contacts: ", closest_nodes)
 
 	if err != nil {
 		fmt.Println(err)
@@ -114,15 +111,15 @@ func (kademlia *kademlia) handleFindValue(rpc_id d7024e.KademliaID, find_node rp
 	kademlia.network.SendMessage(addr, &response)
 }
 
-func (kademlia *kademlia) handleStore(store_file *rpc.StoreFile, addr string){
+func (kademlia *kademlia) handleStore(store_file *rpc.StoreFile, addr string) {
 	var hostURL string
-	hash := hex.EncodeToString(store_file.FileHash)
-	filePath := storagePath+hash
+	hash := store_file.FileHash.String()
+	filePath := storagePath + hash
 
 	if store_file.Host == rpc.SENDER {
 		hostURL = addr
 	} else {
-		hostURL = rpc.Host
+		hostURL = store_file.Host
 	}
 
 	hostURL += "/storage/" + hash

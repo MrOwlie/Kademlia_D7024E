@@ -64,11 +64,11 @@ func main() {
 	go net.Listen(&wgl)
 	wgl.Wait()
 
+	if performJoin && !kadem.Join(ip, iPort) {
+		return
+	}
 	if performJoin {
-		var wg sync.WaitGroup
-		wg.Add(1)
-		go kadem.Join(ip, iPort, &wg)
-		wg.Wait()
+		kadem.IdleBucketReExploration()
 	}
 
 	var action, param1 string
@@ -90,7 +90,7 @@ func main() {
 			if err != nil {
 				fmt.Println("An error occured while reading the file!")
 			} else {
-				kadem.Store("hej")
+				kadem.StoreFile("hej")
 			}
 		case action == "fetch":
 			kadem.LookupData(param1)

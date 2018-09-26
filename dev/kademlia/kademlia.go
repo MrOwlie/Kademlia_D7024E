@@ -6,21 +6,21 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"math"
 	"os"
 	"sync"
 	"time"
-	"math"
 
 	"../d7024e"
 	"../messageBufferList"
+	"../metadata"
 	"../routingTable"
 	"../rpc"
-	"../metadata"
 )
 
 type NetworkHandler interface {
 	SendMessage(string, *[]byte)
-	FetchFile(string, string)
+	FetchFile(string, string) error
 }
 
 type kademlia struct {
@@ -36,10 +36,10 @@ var instance *kademlia
 var once sync.Once
 
 var storagePath string = "/kademlia/storage/"
-var downLoadPath string = "/kademlia/dowloads/" 
+var downLoadPath string = "/kademlia/dowloads/"
 
-var maxTTL float64 = float64(24*time.Hour)
-var coefficentTTL float64 = maxTTL/math.Exp(160)
+var maxTTL float64 = float64(24 * time.Hour)
+var coefficentTTL float64 = maxTTL / math.Exp(160)
 
 const alpha int = 3
 const valueK int = 20
@@ -71,7 +71,7 @@ func (kademlia *kademlia) SetNetworkHandler(handler NetworkHandler) {
 	GetInstance().network = handler
 }
 
-func (kademlia *kademlia) lookupProcedure(procedureType int, target *d7024e.KademliaID) (*d7024e.ContactCandidates, *d7024e.Contact, bool){
+func (kademlia *kademlia) lookupProcedure(procedureType int, target *d7024e.KademliaID) (*d7024e.ContactCandidates, *d7024e.Contact, bool) {
 
 	rTable := routingTable.GetInstance()
 	candids := &d7024e.ContactCandidates{}
@@ -155,7 +155,7 @@ func (kademlia *kademlia) lookupProcedure(procedureType int, target *d7024e.Kade
 
 				if fileWasFound {
 					return candids, fileHost, fileWasFound
-				}				
+				}
 
 				if allowedTimeouts < 0 {
 					time.Sleep(1000 * time.Millisecond)
@@ -198,7 +198,6 @@ func (kademlia *kademlia) lookupProcedure(procedureType int, target *d7024e.Kade
 				return candids, fileHost, fileWasFound
 			}
 
-
 			//save k closest distinct contacts for next iteration
 			candids.Sort()
 			distinctContacts := candids.GetDistinctContacts(valueK)
@@ -231,7 +230,7 @@ func (kademlia *kademlia) lookupProcedure(procedureType int, target *d7024e.Kade
 				}
 
 				for i := len(chans) - 1; i >= 0; i-- {
-					select {	
+					select {
 					case x, ok := <-chans[i]:
 						if ok {
 							if x.returnType == returnContacts {
@@ -310,15 +309,15 @@ func (kademlia *kademlia) LookupContact(target *d7024e.KademliaID) (closest *d70
 	return
 }
 
-func (kademlia *kademlia) LookupData(id string) (filePath string, closest *d7024e.ContactCandidates){
+func (kademlia *kademlia) LookupData(id string) (filePath string, closest *d7024e.ContactCandidates) {
 	fileHash := d7024e.NewKademliaID(id)
 	closest, fileHost, fileWasFound := kademlia.lookupProcedure(procedureValue, fileHash)
-	if fileWasFound{
+	if fileWasFound {
 		url := fileHost.Address + "/storage/" + id
-		filePath = downLoadPath+id
+		filePath = downLoadPath + id
 		kademlia.network.FetchFile(url, filePath)
-		kademlia.sendStoreMessage(closest.Contacts[0], d7024e.NewRandomKademliaID(), fileHash, fileHost.Address)
-	} 
+		kademlia.sendStoreMessage(&closest.Contacts[0], d7024e.NewRandomKademliaID(), fileHash, fileHost.Address)
+	}
 	return
 }
 
@@ -348,12 +347,11 @@ func (kademlia *kademlia) StoreFile(filePath string) {
 	closest, _, _ := kademlia.lookupProcedure(procedureContacts, kademliaHash)
 
 	for _, c := range closest.Contacts {
-		kademlia.sendStoreMessage(c, d7024e.NewRandomKademliaID(), kademliaHash, rpc.SENDER)
+		kademlia.sendStoreMessage(&c, d7024e.NewRandomKademliaID(), kademliaHash, rpc.SENDER)
 	}
 }
 
-
-func (kademlia *kademlia) Join(ip string, port int, wg *sync.WaitGroup) {
+func (kademlia *kademlia) Join(ip string, port int) bool {
 	fmt.Printf("joining %q on port %d", ip, port)
 	rpcID := d7024e.NewRandomKademliaID()
 	bootstrapContact := d7024e.NewContact(d7024e.NewRandomKademliaID(), fmt.Sprintf("%s:%d", ip, port))
@@ -369,22 +367,21 @@ func (kademlia *kademlia) Join(ip string, port int, wg *sync.WaitGroup) {
 
 		//wait until a response is
 		message := <-mBuffer.MessageChannel
-		fmt.Println("got through channel")
 
 		if message.RpcType == rpc.CLOSEST_NODES {
 
 			var contacts rpc.ClosestNodes = rpc.ClosestNodes{}
 			json.Unmarshal(message.RpcData, &contacts)
 			for _, contact := range contacts.Closest {
-				routingTable.GetInstance().AddContact(contact)
+				kademlia.addContact(&contact)
 			}
-			wg.Done()
-			return
+			return true
 		}
 		rpcID = d7024e.NewRandomKademliaID()
 		retry++
 	}
 	fmt.Printf("Failed to join network after three tries. Please try to connect to another node.")
+	return false
 
 }
 
@@ -424,10 +421,8 @@ func (kademlia *kademlia) addContact(contact *d7024e.Contact) {
 
 }
 
-func calcTimeToLive(fileId *d7024e.KademliaID) (ttl time.Duration){
+func calcTimeToLive(fileId *d7024e.KademliaID) (ttl time.Duration) {
 	exponent := float64(routingTable.GetInstance().GetBucketIndex(fileId))
-	ttl = time.Duration(coefficentTTL*math.Exp(exponent))
+	ttl = time.Duration(coefficentTTL * math.Exp(exponent))
 	return
 }
-
-
