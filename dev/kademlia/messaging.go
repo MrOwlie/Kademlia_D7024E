@@ -42,8 +42,8 @@ func (kademlia *kademlia) HandleIncomingRPC(data []byte, addr string) {
 	case rpc.STORE:
 		var store_file rpc.StoreFile
 		json.Unmarshal(message.RpcData, &store_file)
-		kademlia.handleFindValue(message.RpcId, find_node, addr)
-		
+		kademlia.handleFindValue(message.RpcId, store_file, addr)
+
 	/*case rpc.TIME_OUT:
 	kademlia.HandleTimeout(message.RpcId)*/
 
