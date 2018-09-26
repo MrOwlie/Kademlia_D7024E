@@ -27,8 +27,6 @@ type testNetwork struct {
 	sendMutex sync.Mutex
 }
 
-
-
 func (net *testNetwork) SendMessage(addr string, data *[]byte) {
 	fmt.Println(string(*data))
 	net.sendMutex.Lock()
@@ -52,12 +50,10 @@ func (net *testNetwork) FetchFile(a string, b string) error {
 	return nil
 }
 
-
-
 func TestFindNode(t *testing.T) {
 	target := d7024e.NewContact(d7024e.NewKademliaID("FFFFFFFFF0000000000000000000000000000000"), "localhost:8000")
 
-	startingContacts := []d7024e.Contact{					
+	startingContacts := []d7024e.Contact{
 		d7024e.NewContact(d7024e.NewKademliaID("FFFFFFFFF0000000000000000000000000000001"), "localhost:8001"),
 		d7024e.NewContact(d7024e.NewKademliaID("FFFFFFFFF0000000000000000000000000000002"), "localhost:8002"),
 		d7024e.NewContact(d7024e.NewKademliaID("FFFFFFFFF0000000000000000000000000000003"), "localhost:8003"),
@@ -75,7 +71,7 @@ func TestFindNode(t *testing.T) {
 		d7024e.NewContact(d7024e.NewKademliaID("FFFFFFFFF000000000000000000000000000001D"), "localhost:8029"),
 	}
 
-	recipients := []d7024e.Contact{					
+	recipients := []d7024e.Contact{
 		d7024e.NewContact(d7024e.NewKademliaID("FFFFFFFFF0000000000000000000000000000001"), "localhost:8001"),
 		d7024e.NewContact(d7024e.NewKademliaID("FFFFFFFFF0000000000000000000000000000002"), "localhost:8002"),
 		d7024e.NewContact(d7024e.NewKademliaID("FFFFFFFFF0000000000000000000000000000003"), "localhost:8003"),
@@ -101,7 +97,7 @@ func TestFindNode(t *testing.T) {
 		d7024e.NewContact(d7024e.NewKademliaID("FFFFFFFFF0000000000000000000000000000017"), "localhost:8023"),
 	}
 
-	expectedResult := []d7024e.Contact{					
+	expectedResult := []d7024e.Contact{
 		d7024e.NewContact(d7024e.NewKademliaID("FFFFFFFFF0000000000000000000000000000001"), "localhost:8001"),
 		d7024e.NewContact(d7024e.NewKademliaID("FFFFFFFFF0000000000000000000000000000002"), "localhost:8002"),
 		d7024e.NewContact(d7024e.NewKademliaID("FFFFFFFFF0000000000000000000000000000003"), "localhost:8003"),
@@ -126,10 +122,9 @@ func TestFindNode(t *testing.T) {
 
 	recipientIndex := 0
 
-
 	cList := []testNetworkControl{
-		testNetworkControl{ 											//First reponse
-			func (msg rpc.Message, addr string){
+		testNetworkControl{ //First reponse
+			func(msg rpc.Message, addr string) {
 				expectedRecipitent := recipients[recipientIndex]
 				expectedType := rpc.FIND_NODE
 
@@ -148,16 +143,17 @@ func TestFindNode(t *testing.T) {
 				for _, c := range nodesFound {
 					c.CalcDistance(target.ID)
 				}
-			
+
 				nodesFoundM, _ := json.Marshal(nodesFound)
 				firstResponse := rpc.Message{rpc.FIND_NODE, msg.RpcId, *recipients[recipientIndex].ID, nodesFoundM}
-				recipientIndex++;
-				GetInstance().HandleIncomingRPC(firstResponse)
+				byteMsg, _ := json.Marshal(firstResponse)
+				recipientIndex++
+				GetInstance().HandleIncomingRPC(byteMsg, addr)
 			},
 		},
 
-		testNetworkControl{ 											//Second reponse
-			func (msg rpc.Message, addr string){
+		testNetworkControl{ //Second reponse
+			func(msg rpc.Message, addr string) {
 				expectedRecipitent := recipients[recipientIndex]
 				expectedType := rpc.FIND_NODE
 
@@ -176,16 +172,17 @@ func TestFindNode(t *testing.T) {
 				for _, c := range nodesFound {
 					c.CalcDistance(target.ID)
 				}
-			
+
 				nodesFoundM, _ := json.Marshal(nodesFound)
 				secondResponse := rpc.Message{rpc.FIND_NODE, msg.RpcId, *recipients[recipientIndex].ID, nodesFoundM}
-				recipientIndex++;
-				GetInstance().HandleIncomingRPC(secondResponse)
+				byteMsg, _ := json.Marshal(secondResponse)
+				recipientIndex++
+				GetInstance().HandleIncomingRPC(byteMsg, addr)
 			},
 		},
 
-		testNetworkControl{ 											//Third reponse
-			func (msg rpc.Message, addr string){
+		testNetworkControl{ //Third reponse
+			func(msg rpc.Message, addr string) {
 				expectedRecipitent := recipients[recipientIndex]
 				expectedType := rpc.FIND_NODE
 
@@ -199,36 +196,38 @@ func TestFindNode(t *testing.T) {
 				for _, c := range nodesFound {
 					c.CalcDistance(target.ID)
 				}
-			
+
 				nodesFoundM, _ := json.Marshal(nodesFound)
 				thirdResponse := rpc.Message{rpc.FIND_NODE, msg.RpcId, *recipients[recipientIndex].ID, nodesFoundM}
-				recipientIndex++;
-				GetInstance().HandleIncomingRPC(thirdResponse)
+				byteMsg, _ := json.Marshal(thirdResponse)
+				recipientIndex++
+				GetInstance().HandleIncomingRPC(byteMsg, addr)
 			},
 		},
-	}	
+	}
 
 	//Rest of the responses
-	for i := 0; i < 20; i++ {		
-		cList = append(cList, testNetworkControl{ 											
-				func (msg rpc.Message, addr string){
-					expectedRecipitent := recipients[recipientIndex]
-					expectedType := rpc.FIND_NODE
+	for i := 0; i < 20; i++ {
+		cList = append(cList, testNetworkControl{
+			func(msg rpc.Message, addr string) {
+				expectedRecipitent := recipients[recipientIndex]
+				expectedType := rpc.FIND_NODE
 
-					assertEqual(t, expectedType, msg.RpcType)
-					assertEqual(t, expectedRecipitent.Address, addr)
+				assertEqual(t, expectedType, msg.RpcType)
+				assertEqual(t, expectedRecipitent.Address, addr)
 
-					nodesFound := []d7024e.Contact{
-						d7024e.NewContact(d7024e.NewKademliaID("FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF"), "localhost:8021"),
-					}
-					nodesFound[0].CalcDistance(target.ID)
-				
-					nodesFoundM, _ := json.Marshal(nodesFound)
-					response := rpc.Message{rpc.FIND_NODE, msg.RpcId, *recipients[recipientIndex].ID, nodesFoundM}
-					recipientIndex++
-					GetInstance().HandleIncomingRPC(response)
-				},
-			})
+				nodesFound := []d7024e.Contact{
+					d7024e.NewContact(d7024e.NewKademliaID("FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF"), "localhost:8021"),
+				}
+				nodesFound[0].CalcDistance(target.ID)
+
+				nodesFoundM, _ := json.Marshal(nodesFound)
+				response := rpc.Message{rpc.FIND_NODE, msg.RpcId, *recipients[recipientIndex].ID, nodesFoundM}
+				byteMsg, _ := json.Marshal(response)
+				recipientIndex++
+				GetInstance().HandleIncomingRPC(byteMsg, addr)
+			},
+		})
 	}
 
 	//Routing table setup
@@ -242,12 +241,10 @@ func TestFindNode(t *testing.T) {
 	net.CheckList = cList
 	kadem.SetNetworkHandler(&net)
 
-	result, _, _ := kadem.lookupProcedure(procedureContacts,target)
+	result, _, _ := kadem.lookupProcedure(procedureContacts, target.ID)
 
 	assertEqual(t, expectedResult, result)
 }
-
-
 
 func TestJoin(t *testing.T) {
 	kadem := GetInstance()
