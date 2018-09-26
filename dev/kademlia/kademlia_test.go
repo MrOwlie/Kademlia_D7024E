@@ -54,7 +54,52 @@ func (net *testNetwork) FetchFile(a string, b string) error {
 
 func TestFindNode(t *testing.T) {
 	target := d7024e.NewContact(d7024e.NewKademliaID("FFFFFFFFF0000000000000000000000000000000"), "localhost:8000")
-	expectedResponse := []d7024e.Contacts{					
+
+	startingContacts := []d7024e.Contact{					
+		d7024e.NewContact(d7024e.NewKademliaID("FFFFFFFFF0000000000000000000000000000001"), "localhost:8001"),
+		d7024e.NewContact(d7024e.NewKademliaID("FFFFFFFFF0000000000000000000000000000002"), "localhost:8002"),
+		d7024e.NewContact(d7024e.NewKademliaID("FFFFFFFFF0000000000000000000000000000003"), "localhost:8003"),
+		d7024e.NewContact(d7024e.NewKademliaID("FFFFFFFFF0000000000000000000000000000004"), "localhost:8004"),
+		d7024e.NewContact(d7024e.NewKademliaID("FFFFFFFFF0000000000000000000000000000005"), "localhost:8005"),
+		d7024e.NewContact(d7024e.NewKademliaID("FFFFFFFFF0000000000000000000000000000006"), "localhost:8006"),
+		d7024e.NewContact(d7024e.NewKademliaID("FFFFFFFFF0000000000000000000000000000015"), "localhost:8021"),
+		d7024e.NewContact(d7024e.NewKademliaID("FFFFFFFFF0000000000000000000000000000016"), "localhost:8022"),
+		d7024e.NewContact(d7024e.NewKademliaID("FFFFFFFFF0000000000000000000000000000017"), "localhost:8023"),
+		d7024e.NewContact(d7024e.NewKademliaID("FFFFFFFFF0000000000000000000000000000018"), "localhost:8024"),
+		d7024e.NewContact(d7024e.NewKademliaID("FFFFFFFFF0000000000000000000000000000019"), "localhost:8025"),
+		d7024e.NewContact(d7024e.NewKademliaID("FFFFFFFFF000000000000000000000000000001A"), "localhost:8026"),
+		d7024e.NewContact(d7024e.NewKademliaID("FFFFFFFFF000000000000000000000000000001B"), "localhost:8027"),
+		d7024e.NewContact(d7024e.NewKademliaID("FFFFFFFFF000000000000000000000000000001C"), "localhost:8028"),
+		d7024e.NewContact(d7024e.NewKademliaID("FFFFFFFFF000000000000000000000000000001D"), "localhost:8029"),
+	}
+
+	recipients := []d7024e.Contact{					
+		d7024e.NewContact(d7024e.NewKademliaID("FFFFFFFFF0000000000000000000000000000001"), "localhost:8001"),
+		d7024e.NewContact(d7024e.NewKademliaID("FFFFFFFFF0000000000000000000000000000002"), "localhost:8002"),
+		d7024e.NewContact(d7024e.NewKademliaID("FFFFFFFFF0000000000000000000000000000003"), "localhost:8003"),
+		d7024e.NewContact(d7024e.NewKademliaID("FFFFFFFFF0000000000000000000000000000004"), "localhost:8004"),
+		d7024e.NewContact(d7024e.NewKademliaID("FFFFFFFFF0000000000000000000000000000005"), "localhost:8005"),
+		d7024e.NewContact(d7024e.NewKademliaID("FFFFFFFFF0000000000000000000000000000006"), "localhost:8006"),
+		d7024e.NewContact(d7024e.NewKademliaID("FFFFFFFFF0000000000000000000000000000007"), "localhost:8007"),
+		d7024e.NewContact(d7024e.NewKademliaID("FFFFFFFFF0000000000000000000000000000008"), "localhost:8008"),
+		d7024e.NewContact(d7024e.NewKademliaID("FFFFFFFFF0000000000000000000000000000009"), "localhost:8009"),
+		d7024e.NewContact(d7024e.NewKademliaID("FFFFFFFFF000000000000000000000000000000A"), "localhost:8010"),
+		d7024e.NewContact(d7024e.NewKademliaID("FFFFFFFFF000000000000000000000000000000B"), "localhost:8011"),
+		d7024e.NewContact(d7024e.NewKademliaID("FFFFFFFFF000000000000000000000000000000C"), "localhost:8012"),
+		d7024e.NewContact(d7024e.NewKademliaID("FFFFFFFFF000000000000000000000000000000D"), "localhost:8013"),
+		d7024e.NewContact(d7024e.NewKademliaID("FFFFFFFFF000000000000000000000000000000E"), "localhost:8014"),
+		d7024e.NewContact(d7024e.NewKademliaID("FFFFFFFFF000000000000000000000000000000F"), "localhost:8015"),
+		d7024e.NewContact(d7024e.NewKademliaID("FFFFFFFFF0000000000000000000000000000010"), "localhost:8016"),
+		d7024e.NewContact(d7024e.NewKademliaID("FFFFFFFFF0000000000000000000000000000011"), "localhost:8017"),
+		d7024e.NewContact(d7024e.NewKademliaID("FFFFFFFFF0000000000000000000000000000012"), "localhost:8018"),
+		d7024e.NewContact(d7024e.NewKademliaID("FFFFFFFFF0000000000000000000000000000013"), "localhost:8019"),
+		d7024e.NewContact(d7024e.NewKademliaID("FFFFFFFFF0000000000000000000000000000014"), "localhost:8020"),
+		d7024e.NewContact(d7024e.NewKademliaID("FFFFFFFFF0000000000000000000000000000015"), "localhost:8021"),
+		d7024e.NewContact(d7024e.NewKademliaID("FFFFFFFFF0000000000000000000000000000016"), "localhost:8022"),
+		d7024e.NewContact(d7024e.NewKademliaID("FFFFFFFFF0000000000000000000000000000017"), "localhost:8023"),
+	}
+
+	expectedResult := []d7024e.Contact{					
 		d7024e.NewContact(d7024e.NewKademliaID("FFFFFFFFF0000000000000000000000000000001"), "localhost:8001"),
 		d7024e.NewContact(d7024e.NewKademliaID("FFFFFFFFF0000000000000000000000000000002"), "localhost:8002"),
 		d7024e.NewContact(d7024e.NewKademliaID("FFFFFFFFF0000000000000000000000000000003"), "localhost:8003"),
@@ -77,8 +122,130 @@ func TestFindNode(t *testing.T) {
 		d7024e.NewContact(d7024e.NewKademliaID("FFFFFFFFF0000000000000000000000000000014"), "localhost:8020"),
 	}
 
+	recipientIndex := 0
 
+
+	cList := []testNetworkControl{
+		testNetworkControl{ 											//First reponse
+			func (msg rpc.Message, addr string){
+				expectedRecipitent := recipients[recipientIndex]
+				expectedType := rpc.FIND_NODE
+
+				assertEqual(t, expectedType, msg.RpcType)
+				assertEqual(t, expectedRecipitent.Address, addr)
+
+				nodesFound := []d7024e.Contact{
+					d7024e.NewContact(d7024e.NewKademliaID("FFFFFFFFF0000000000000000000000000000007"), "localhost:8007"),
+					d7024e.NewContact(d7024e.NewKademliaID("FFFFFFFFF0000000000000000000000000000008"), "localhost:8008"),
+					d7024e.NewContact(d7024e.NewKademliaID("FFFFFFFFF0000000000000000000000000000009"), "localhost:8009"),
+					d7024e.NewContact(d7024e.NewKademliaID("FFFFFFFFF000000000000000000000000000000A"), "localhost:8010"),
+					d7024e.NewContact(d7024e.NewKademliaID("FFFFFFFFF000000000000000000000000000000B"), "localhost:8011"),
+					d7024e.NewContact(d7024e.NewKademliaID("FFFFFFFFF000000000000000000000000000000C"), "localhost:8012"),
+				}
+
+				for _, c := range nodesFound {
+					c.CalcDistance(target.ID)
+				}
+			
+				nodesFoundM, _ := json.Marshal(nodesFound)
+				firstResponse := rpc.Message{rpc.FIND_NODE, msg.RpcId, *recipients[recipientIndex].ID, nodesFoundM}
+				recipientIndex++;
+				GetInstance().HandleIncomingRPC(firstResponse)
+			},
+		},
+
+		testNetworkControl{ 											//Second reponse
+			func (msg rpc.Message, addr string){
+				expectedRecipitent := recipients[recipientIndex]
+				expectedType := rpc.FIND_NODE
+
+				assertEqual(t, expectedType, msg.RpcType)
+				assertEqual(t, expectedRecipitent.Address, addr)
+
+				nodesFound := []d7024e.Contact{
+					d7024e.NewContact(d7024e.NewKademliaID("FFFFFFFFF000000000000000000000000000000D"), "localhost:8013"),
+					d7024e.NewContact(d7024e.NewKademliaID("FFFFFFFFF000000000000000000000000000000E"), "localhost:8014"),
+					d7024e.NewContact(d7024e.NewKademliaID("FFFFFFFFF000000000000000000000000000000F"), "localhost:8015"),
+					d7024e.NewContact(d7024e.NewKademliaID("FFFFFFFFF0000000000000000000000000000010"), "localhost:8016"),
+					d7024e.NewContact(d7024e.NewKademliaID("FFFFFFFFF0000000000000000000000000000011"), "localhost:8017"),
+					d7024e.NewContact(d7024e.NewKademliaID("FFFFFFFFF0000000000000000000000000000012"), "localhost:8018"),
+				}
+
+				for _, c := range nodesFound {
+					c.CalcDistance(target.ID)
+				}
+			
+				nodesFoundM, _ := json.Marshal(nodesFound)
+				secondResponse := rpc.Message{rpc.FIND_NODE, msg.RpcId, *recipients[recipientIndex].ID, nodesFoundM}
+				recipientIndex++;
+				GetInstance().HandleIncomingRPC(secondResponse)
+			},
+		},
+
+		testNetworkControl{ 											//Third reponse
+			func (msg rpc.Message, addr string){
+				expectedRecipitent := recipients[recipientIndex]
+				expectedType := rpc.FIND_NODE
+
+				assertEqual(t, expectedType, msg.RpcType)
+				assertEqual(t, expectedRecipitent.Address, addr)
+
+				nodesFound := []d7024e.Contact{
+					d7024e.NewContact(d7024e.NewKademliaID("FFFFFFFFF0000000000000000000000000000013"), "localhost:8019"),
+					d7024e.NewContact(d7024e.NewKademliaID("FFFFFFFFF0000000000000000000000000000014"), "localhost:8020"),
+				}
+				for _, c := range nodesFound {
+					c.CalcDistance(target.ID)
+				}
+			
+				nodesFoundM, _ := json.Marshal(nodesFound)
+				thirdResponse := rpc.Message{rpc.FIND_NODE, msg.RpcId, *recipients[recipientIndex].ID, nodesFoundM}
+				recipientIndex++;
+				GetInstance().HandleIncomingRPC(thirdResponse)
+			},
+		},
+	}	
+
+	//Rest of the responses
+	for i := 0; i < 20; i++ {		
+		cList = append(cList, testNetworkControl{ 											
+				func (msg rpc.Message, addr string){
+					expectedRecipitent := recipients[recipientIndex]
+					expectedType := rpc.FIND_NODE
+
+					assertEqual(t, expectedType, msg.RpcType)
+					assertEqual(t, expectedRecipitent.Address, addr)
+
+					nodesFound := []d7024e.Contact{
+						d7024e.NewContact(d7024e.NewKademliaID("FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF"), "localhost:8021"),
+					}
+					nodesFound[0].CalcDistance(target.ID)
+				
+					nodesFoundM, _ := json.Marshal(nodesFound)
+					response := rpc.Message{rpc.FIND_NODE, msg.RpcId, *recipients[recipientIndex].ID, nodesFoundM}
+					recipientIndex++
+					GetInstance().HandleIncomingRPC(response)
+				},
+			})
+	}
+
+	//Routing table setup
+	rt := routingTable.GetInstance()
+	for _, c := range startingContacts {
+		rt.AddContact(c)
+	}
+
+	kadem := GetInstance()
+	net := testNetwork{}
+	net.CheckList = cList
+	kadem.SetNetworkHandler(&net)
+
+	result, _, _ := kadem.lookupProcedure(procedureContacts,target)
+
+	assertEqual(t, expectedResult, result)
 }
+
+
 
 func TestJoin(t *testing.T) {
 	kadem := GetInstance()

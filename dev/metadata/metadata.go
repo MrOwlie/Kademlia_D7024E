@@ -70,7 +70,6 @@ func (fileMetaData *FileMetaData) FilesToDelete() (filesToDelete []string){
 
 func (fileMetaData *FileMetaData) FilesToRepublish() (filesToRepublish []string){
 	fileMetaData.mutex.Lock()
-
 	for i := 0; i < len(fileMetaData.fileData); i++{
 		if fileMetaData.fileData[i].TimeToRepublish(){
 			filesToRepublish = append(filesToRepublish, fileMetaData.fileData[i].filePath)
@@ -88,7 +87,7 @@ func (fileMetaData *FileMetaData) HasFile(hash string) bool{
 			fileMetaData.mutex.Unlock()
 			return true 
 		}	
-	}
+	
 	fileMetaData.mutex.Unlock()
 	return false
 }
