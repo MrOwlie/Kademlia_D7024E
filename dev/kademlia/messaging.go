@@ -15,6 +15,7 @@ import (
 //var storagePath string = "What ever the storage path is" //TODO fix this
 
 func (kademlia *kademlia) HandleIncomingRPC(data []byte, addr string) {
+	//fmt.Println("def ", addr)
 	var message rpc.Message = rpc.Message{}
 	unmarshaling_err := json.Unmarshal(data, &message)
 	if unmarshaling_err != nil {
@@ -22,7 +23,6 @@ func (kademlia *kademlia) HandleIncomingRPC(data []byte, addr string) {
 	}
 
 	//Update contact
-	fmt.Println("adding contact ", addr)
 	con := d7024e.NewContact(&message.SenderId, addr)
 	kademlia.addContact(&con)
 	switch message.RpcType {

@@ -28,7 +28,6 @@ type testNetwork struct {
 }
 
 func (net *testNetwork) SendMessage(addr string, data *[]byte) {
-	fmt.Println(string(*data))
 	net.sendMutex.Lock()
 	defer net.sendMutex.Unlock()
 
@@ -52,6 +51,7 @@ func (net *testNetwork) FetchFile(a string, b string) error {
 
 func TestFindNode(t *testing.T) {
 	target := d7024e.NewContact(d7024e.NewKademliaID("FFFFFFFFF0000000000000000000000000000000"), "localhost:8000")
+	kadem := GetInstance()
 
 	startingContacts := []d7024e.Contact{
 		d7024e.NewContact(d7024e.NewKademliaID("FFFFFFFFF0000000000000000000000000000001"), "localhost:8001"),
@@ -125,6 +125,7 @@ func TestFindNode(t *testing.T) {
 	cList := []testNetworkControl{
 		testNetworkControl{ //First reponse
 			func(msg rpc.Message, addr string) {
+
 				expectedRecipitent := recipients[recipientIndex]
 				expectedType := rpc.FIND_NODE
 
@@ -145,15 +146,17 @@ func TestFindNode(t *testing.T) {
 				}
 
 				nodesFoundM, _ := json.Marshal(nodesFound)
-				firstResponse := rpc.Message{rpc.FIND_NODE, msg.RpcId, *recipients[recipientIndex].ID, nodesFoundM}
+				firstResponse := rpc.Message{rpc.CLOSEST_NODES, msg.RpcId, *recipients[recipientIndex].ID, nodesFoundM}
 				byteMsg, _ := json.Marshal(firstResponse)
 				recipientIndex++
-				GetInstance().HandleIncomingRPC(byteMsg, addr)
+				kadem.HandleIncomingRPC(byteMsg, addr)
+				fmt.Println("ejo")
 			},
 		},
 
 		testNetworkControl{ //Second reponse
 			func(msg rpc.Message, addr string) {
+
 				expectedRecipitent := recipients[recipientIndex]
 				expectedType := rpc.FIND_NODE
 
@@ -174,15 +177,17 @@ func TestFindNode(t *testing.T) {
 				}
 
 				nodesFoundM, _ := json.Marshal(nodesFound)
-				secondResponse := rpc.Message{rpc.FIND_NODE, msg.RpcId, *recipients[recipientIndex].ID, nodesFoundM}
-				byteMsg, _ := json.Marshal(secondResponse)
+				secondResponse := rpc.Message{rpc.CLOSEST_NODES, msg.RpcId, *recipients[recipientIndex].ID, nodesFoundM}
+				byteMsg2, _ := json.Marshal(secondResponse)
 				recipientIndex++
-				GetInstance().HandleIncomingRPC(byteMsg, addr)
+				kadem.HandleIncomingRPC(byteMsg2, addr)
+				fmt.Println("ejo2")
 			},
 		},
 
 		testNetworkControl{ //Third reponse
 			func(msg rpc.Message, addr string) {
+
 				expectedRecipitent := recipients[recipientIndex]
 				expectedType := rpc.FIND_NODE
 
@@ -198,10 +203,11 @@ func TestFindNode(t *testing.T) {
 				}
 
 				nodesFoundM, _ := json.Marshal(nodesFound)
-				thirdResponse := rpc.Message{rpc.FIND_NODE, msg.RpcId, *recipients[recipientIndex].ID, nodesFoundM}
+				thirdResponse := rpc.Message{rpc.CLOSEST_NODES, msg.RpcId, *recipients[recipientIndex].ID, nodesFoundM}
 				byteMsg, _ := json.Marshal(thirdResponse)
 				recipientIndex++
-				GetInstance().HandleIncomingRPC(byteMsg, addr)
+				kadem.HandleIncomingRPC(byteMsg, addr)
+				fmt.Println("ejo3")
 			},
 		},
 	}
@@ -222,10 +228,10 @@ func TestFindNode(t *testing.T) {
 				nodesFound[0].CalcDistance(target.ID)
 
 				nodesFoundM, _ := json.Marshal(nodesFound)
-				response := rpc.Message{rpc.FIND_NODE, msg.RpcId, *recipients[recipientIndex].ID, nodesFoundM}
+				response := rpc.Message{rpc.CLOSEST_NODES, msg.RpcId, *recipients[recipientIndex].ID, nodesFoundM}
 				byteMsg, _ := json.Marshal(response)
 				recipientIndex++
-				GetInstance().HandleIncomingRPC(byteMsg, addr)
+				kadem.HandleIncomingRPC(byteMsg, addr)
 			},
 		})
 	}
@@ -236,7 +242,6 @@ func TestFindNode(t *testing.T) {
 		rt.AddContact(c)
 	}
 
-	kadem := GetInstance()
 	net := testNetwork{}
 	net.CheckList = cList
 	kadem.SetNetworkHandler(&net)

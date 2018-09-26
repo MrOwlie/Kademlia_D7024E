@@ -108,6 +108,7 @@ func (kademlia *kademlia) lookupProcedure(procedureType int, target *d7024e.Kade
 						go kademlia.lookupSubProcedure(contact, target, procedureType, ch)
 						queried = queried + 1
 						queriedAddresses[contact.Address] = true
+						fmt.Println("started query among alpha to number ", queried)
 					}
 				} else {
 					break
@@ -116,7 +117,7 @@ func (kademlia *kademlia) lookupProcedure(procedureType int, target *d7024e.Kade
 
 			//wait for the queries to return data
 			startTime := time.Now()
-			incrementalLimit := 5
+			incrementalLimit := 1
 			startIndex := 0
 			if len(chans) > alpha {
 				startIndex = len(chans) - alpha
@@ -158,6 +159,7 @@ func (kademlia *kademlia) lookupProcedure(procedureType int, target *d7024e.Kade
 				}
 
 				if allowedTimeouts < 0 {
+					fmt.Println("waited one round, sleeping")
 					time.Sleep(1000 * time.Millisecond)
 				} else {
 					break
@@ -280,6 +282,7 @@ func (kademlia *kademlia) lookupSubProcedure(target d7024e.Contact, toFind *d702
 
 	//send different messages depending on type
 	if lookupType == procedureContacts {
+		fmt.Println("sending find message")
 		kademlia.sendFindContactMessage(&target, toFind, rpcID)
 	} else if lookupType == procedureValue {
 		kademlia.sendFindDataMessage(&target, toFind, rpcID)
@@ -287,6 +290,7 @@ func (kademlia *kademlia) lookupSubProcedure(target d7024e.Contact, toFind *d702
 
 	//wait until a response is retrieved
 	message := <-mBuffer.MessageChannel
+	fmt.Println("sub-proc got data")
 
 	//Return different flags and payload depending on file is found or contacts is returned
 	if message.RpcType == rpc.CLOSEST_NODES {
