@@ -506,6 +506,7 @@ func TestPing(t *testing.T) {
 
 	net := testNetwork{}
 	net.CheckList = cList
+	kadem.SetNetworkHandler(&net)
 
 	kadem.HandleIncomingRPC(d, "10.10.10.10:1000")
 	wg1.Wait()
@@ -517,7 +518,6 @@ func helperReturnMarshal(data interface{}) []byte {
 }
 
 func assertEqual(t *testing.T, a interface{}, b interface{}) {
-	fmt.Println("q ", a, " ", b)
 	if a != b {
 		panic(fmt.Sprintf("%s != %s", a, b))
 		//t.Fatalf("%s != %s", a, b)
