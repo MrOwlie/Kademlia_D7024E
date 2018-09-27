@@ -97,7 +97,6 @@ func TestFindNode(t *testing.T) {
 		d7024e.NewContact(d7024e.NewKademliaID("FFFFFFFFF0000000000000000000000000000017"), "localhost:8023"),
 	}
 
-
 	expectedResult := []d7024e.Contact{
 		d7024e.NewContact(d7024e.NewKademliaID("FFFFFFFFF0000000000000000000000000000001"), "localhost:8001"),
 		d7024e.NewContact(d7024e.NewKademliaID("FFFFFFFFF0000000000000000000000000000002"), "localhost:8002"),
@@ -120,8 +119,8 @@ func TestFindNode(t *testing.T) {
 		d7024e.NewContact(d7024e.NewKademliaID("FFFFFFFFF0000000000000000000000000000013"), "localhost:8019"),
 		d7024e.NewContact(d7024e.NewKademliaID("FFFFFFFFF0000000000000000000000000000014"), "localhost:8020"),
 	}
-	
-	recipientIndexLock := sync.Mutex
+
+	var recipientIndexLock sync.Mutex
 	recipientIndex := 0
 
 	cList := []testNetworkControl{
@@ -193,7 +192,7 @@ func TestFindNode(t *testing.T) {
 
 		testNetworkControl{ //Third reponse
 			func(msg rpc.Message, addr string) {
-				
+
 				recipientIndexLock.Lock()
 				expectedRecipitent := recipients[recipientIndex]
 				expectedType := rpc.FIND_NODE
@@ -242,7 +241,7 @@ func TestFindNode(t *testing.T) {
 				byteMsg, _ := json.Marshal(response)
 				recipientIndex++
 				recipientIndexLock.Unlock()
-				
+
 				kadem.HandleIncomingRPC(byteMsg, addr)
 			},
 		})

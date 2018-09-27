@@ -12,7 +12,7 @@ import (
 
 func scheduleMessageBufferListGarbageCollect() {
 	mbList := messageBufferList.GetInstance()
-	ticker := time.NewTicker(5 * time.Minute)
+	ticker := time.NewTicker(10 * time.Second)
 
 	go func() {
 		for {
@@ -25,7 +25,7 @@ func scheduleMessageBufferListGarbageCollect() {
 }
 
 func scheduleIdleBucketReExploration() {
-	ticker := time.NewTicker(5 * time.Minute)
+	ticker := time.NewTicker(60 * time.Minute)
 
 	go func() {
 		for {
@@ -49,7 +49,7 @@ func (kademlia *kademlia) IdleBucketReExploration() {
 
 func scheduleFileRepublish() {
 	metaData := metadata.GetInstance()
-	ticker := time.NewTicker(5 * time.Minute)
+	ticker := time.NewTicker(60 * time.Minute)
 
 	go func() {
 		kademlia := GetInstance()
@@ -68,7 +68,7 @@ func scheduleFileRepublish() {
 
 func scheduleCacheExpiredFileDeletion() {
 	metaData := metadata.GetInstance()
-	ticker := time.NewTicker(5 * time.Minute)
+	ticker := time.NewTicker(60 * time.Minute)
 
 	go func() {
 		//kademlia := GetInstance()

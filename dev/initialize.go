@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"io/ioutil"
+	"net"
 	"os"
 	"regexp"
 	"strconv"
@@ -30,8 +31,12 @@ func main() {
 		ownPort = args[2]
 
 		if !validIP4(ip) {
-			fmt.Printf("%q is not a valid ip-address, exiting.", ip)
-			return
+			res, err := net.LookupHost(ip)
+			if err != nil {
+				fmt.Println(ip, " is not a valid ip-address or host-name, exiting.")
+				return
+			}
+			ip = res[0]
 		}
 		if !validPort(port) {
 			fmt.Printf("%q is not a valid port number, exiting.", port)
@@ -65,11 +70,12 @@ func main() {
 	wgl.Wait()
 
 	if performJoin && !kadem.Join(ip, iPort) {
+		fmt.Println("exiting")
 		return
 	}
-	if performJoin {
+	/*if performJoin {
 		kadem.IdleBucketReExploration()
-	}
+	}*/
 
 	var action, param1 string
 	for {

@@ -12,6 +12,8 @@ import (
 	"../rpc"
 )
 
+var nrcontacts int = 0
+
 //var storagePath string = "What ever the storage path is" //TODO fix this
 
 func (kademlia *kademlia) HandleIncomingRPC(data []byte, addr string) {
@@ -24,6 +26,8 @@ func (kademlia *kademlia) HandleIncomingRPC(data []byte, addr string) {
 
 	//Update contact
 	con := d7024e.NewContact(&message.SenderId, addr)
+	fmt.Println(nrcontacts, " contacts has sent message")
+	nrcontacts++
 	kademlia.addContact(&con)
 	switch message.RpcType {
 

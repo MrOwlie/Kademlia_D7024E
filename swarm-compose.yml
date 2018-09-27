@@ -1,0 +1,38 @@
+version: "3"
+services:
+  Main:
+    image: kademlia:latest
+    stdin_open: true
+    tty: true
+    working_dir: /kademlia/bin
+#    deploy:
+#      mode: global
+#      replicas: 1
+    command: ./initialize 10000
+    networks:
+      kademlia_network:
+        ipv4_address: 172.16.10.10
+
+  Nodes:
+    image: kademlia:latest
+    stdin_open: true
+    tty: true
+    deploy:
+      mode: replicated
+      replicas: 20
+    working_dir: /kademlia/bin
+    command: ./initialize Main 10000 10000
+    depends_on:
+      - "Main"
+    networks:
+      - kademlia_network
+      
+      
+networks:
+  kademlia_network:
+    driver: overlay
+    internal: true
+    ipam:
+      config:
+      -
+        subnet: 172.16.10.0/24

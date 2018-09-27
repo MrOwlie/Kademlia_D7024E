@@ -66,6 +66,7 @@ func (network *network) Listen(wg *sync.WaitGroup) {
 	for {
 		var data [MAX_PACKET_SIZE]byte
 		n, addr, err := conn.ReadFromUDP(data[0:])
+		fmt.Println("got msg")
 		if err != nil {
 			fmt.Println(err)
 			continue
