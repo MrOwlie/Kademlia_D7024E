@@ -5,18 +5,20 @@ import (
 	"io/ioutil"
 	"net"
 	"os"
+	"path/filepath"
 	"regexp"
 	"strconv"
 	"strings"
 	"sync"
 
 	"./kademlia"
+
 	"./network"
 )
 
-var storagePath string = "What ever the storage path is" //TODO fix this
-
 func main() {
+
+	storagePath, _ := filepath.Abs("../storage")
 
 	args := os.Args[1:]
 	var ownPort, ip, port string
@@ -55,9 +57,15 @@ func main() {
 	}
 	iOwnPort, _ = strconv.Atoi(ownPort)
 
-	os.Mkdir(storagePath, 0766)
+	if ex, perr := pathExists(storagePath); perr != nil {
+		fmt.Println("file system error: ", perr)
+		return
+	} else if !ex {
+		os.Mkdir(storagePath, 0766)
+	}
 
 	var kadem = kademlia.GetInstance()
+	return
 
 	network.SetPort(iOwnPort)
 	network.SetHandler(kadem)
@@ -70,7 +78,6 @@ func main() {
 	wgl.Wait()
 
 	if performJoin && !kadem.Join(ip, iPort) {
-		fmt.Println("exiting")
 		return
 	}
 	/*if performJoin {
@@ -122,4 +129,15 @@ func validPort(port string) bool {
 		return true
 	}
 	return false
+}
+
+func pathExists(path string) (bool, error) {
+	_, err := os.Stat(path)
+	if err == nil {
+		return true, nil
+	}
+	if os.IsNotExist(err) {
+		return false, nil
+	}
+	return true, err
 }

@@ -12,8 +12,6 @@ import (
 	"../rpc"
 )
 
-var nrcontacts int = 0
-
 //var storagePath string = "What ever the storage path is" //TODO fix this
 
 func (kademlia *kademlia) HandleIncomingRPC(data []byte, addr string) {
@@ -26,8 +24,6 @@ func (kademlia *kademlia) HandleIncomingRPC(data []byte, addr string) {
 
 	//Update contact
 	con := d7024e.NewContact(&message.SenderId, addr)
-	fmt.Println(nrcontacts, " contacts has sent message")
-	nrcontacts++
 	kademlia.addContact(&con)
 	switch message.RpcType {
 
@@ -120,7 +116,7 @@ func (kademlia *kademlia) handleFindValue(rpc_id d7024e.KademliaID, find_node rp
 func (kademlia *kademlia) handleStore(store_file *rpc.StoreFile, addr string) {
 	var hostURL string
 	hash := store_file.FileHash.String()
-	filePath := storagePath + hash
+	filePath := storagePath + "/" + hash
 
 	if store_file.Host == rpc.SENDER {
 		hostURL = addr

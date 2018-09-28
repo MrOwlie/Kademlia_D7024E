@@ -8,6 +8,7 @@ import (
 	"io"
 	"math"
 	"os"
+	"path/filepath"
 	"sync"
 	"time"
 
@@ -35,8 +36,8 @@ type kademliaMessage struct {
 var instance *kademlia
 var once sync.Once
 
-var storagePath string = "/kademlia/storage/"
-var downLoadPath string = "/kademlia/dowloads/"
+var storagePath string
+var downLoadPath string
 
 var maxTTL float64 = float64(24 * time.Hour)
 var coefficentTTL float64 = maxTTL / math.Exp(160)
@@ -52,6 +53,8 @@ const returnHasValue = 4
 func GetInstance() *kademlia {
 	once.Do(func() {
 		instance = &kademlia{}
+		storagePath, _ = filepath.Abs("../storage/")
+		downLoadPath, _ = filepath.Abs("../downloads/")
 
 		fmt.Println("Starting timed jobs")
 		scheduleMessageBufferListGarbageCollect()
@@ -289,7 +292,6 @@ func (kademlia *kademlia) lookupSubProcedure(target d7024e.Contact, toFind *d702
 
 	//wait until a response is retrieved
 	message := <-mBuffer.MessageChannel
-	fmt.Println("sub-proc got data")
 
 	//Return different flags and payload depending on file is found or contacts is returned
 	if message.RpcType == rpc.CLOSEST_NODES {
@@ -317,7 +319,7 @@ func (kademlia *kademlia) LookupData(id string) (filePath string, closest *d7024
 	closest, fileHost, fileWasFound := kademlia.lookupProcedure(procedureValue, fileHash)
 	if fileWasFound {
 		url := fileHost.Address + "/storage/" + id
-		filePath = downLoadPath + id
+		filePath = downLoadPath + "/" + id
 		kademlia.network.FetchFile(url, filePath)
 		kademlia.sendStoreMessage(&closest.Contacts[0], d7024e.NewRandomKademliaID(), fileHash, fileHost.Address)
 	}
@@ -341,7 +343,7 @@ func (kademlia *kademlia) StoreFile(filePath string) {
 
 	hash := h.Sum(nil)
 	newFileName := hex.EncodeToString(hash)
-	newPath := storagePath + newFileName
+	newPath := storagePath + "/" + newFileName
 	os.Rename(filePath, newPath)
 
 	kademliaHash := d7024e.NewKademliaID(newFileName)
