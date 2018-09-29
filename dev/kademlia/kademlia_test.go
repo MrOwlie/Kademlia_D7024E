@@ -77,15 +77,15 @@ func lookUpTestInitalSetup(target d7024e.Contact, t *testing.T) *[]testNetworkCo
 		d7024e.NewContact(d7024e.NewKademliaID("FFFFFFFFF0000000000000000000000000000004"), "localhost:8004"),
 		d7024e.NewContact(d7024e.NewKademliaID("FFFFFFFFF0000000000000000000000000000005"), "localhost:8005"),
 		d7024e.NewContact(d7024e.NewKademliaID("FFFFFFFFF0000000000000000000000000000006"), "localhost:8006"),
-		d7024e.NewContact(d7024e.NewKademliaID("FFFFFFFFF0000000000000000000000000000015"), "localhost:8021"),
-		d7024e.NewContact(d7024e.NewKademliaID("FFFFFFFFF0000000000000000000000000000016"), "localhost:8022"),
-		d7024e.NewContact(d7024e.NewKademliaID("FFFFFFFFF0000000000000000000000000000017"), "localhost:8023"),
-		d7024e.NewContact(d7024e.NewKademliaID("FFFFFFFFF0000000000000000000000000000018"), "localhost:8024"),
-		d7024e.NewContact(d7024e.NewKademliaID("FFFFFFFFF0000000000000000000000000000019"), "localhost:8025"),
-		d7024e.NewContact(d7024e.NewKademliaID("FFFFFFFFF000000000000000000000000000001A"), "localhost:8026"),
-		d7024e.NewContact(d7024e.NewKademliaID("FFFFFFFFF000000000000000000000000000001B"), "localhost:8027"),
-		d7024e.NewContact(d7024e.NewKademliaID("FFFFFFFFF000000000000000000000000000001C"), "localhost:8028"),
-		d7024e.NewContact(d7024e.NewKademliaID("FFFFFFFFF000000000000000000000000000001D"), "localhost:8029"),
+		d7024e.NewContact(d7024e.NewKademliaID("0FFFFFFFF0000000000000000000000000000015"), "localhost:8021"),
+		d7024e.NewContact(d7024e.NewKademliaID("0FFFFFFFF0000000000000000000000000000016"), "localhost:8022"),
+		d7024e.NewContact(d7024e.NewKademliaID("0FFFFFFFF0000000000000000000000000000017"), "localhost:8023"),
+		d7024e.NewContact(d7024e.NewKademliaID("0FFFFFFFF0000000000000000000000000000018"), "localhost:8024"),
+		d7024e.NewContact(d7024e.NewKademliaID("0FFFFFFFF0000000000000000000000000000019"), "localhost:8025"),
+		d7024e.NewContact(d7024e.NewKademliaID("0FFFFFFFF000000000000000000000000000001A"), "localhost:8026"),
+		d7024e.NewContact(d7024e.NewKademliaID("0FFFFFFFF000000000000000000000000000001B"), "localhost:8027"),
+		d7024e.NewContact(d7024e.NewKademliaID("0FFFFFFFF000000000000000000000000000001C"), "localhost:8028"),
+		d7024e.NewContact(d7024e.NewKademliaID("0FFFFFFFF000000000000000000000000000001D"), "localhost:8029"),
 	}
 
 	firstAlphaRecipients["localhost:8001"] = &expectedRecipient{true, d7024e.NewKademliaID("FFFFFFFFF0000000000000000000000000000001")}
@@ -109,9 +109,9 @@ func lookUpTestInitalSetup(target d7024e.Contact, t *testing.T) *[]testNetworkCo
 	finalKRecipients["localhost:8018"] = &expectedRecipient{true, d7024e.NewKademliaID("FFFFFFFFF0000000000000000000000000000012")}
 	finalKRecipients["localhost:8019"] = &expectedRecipient{true, d7024e.NewKademliaID("FFFFFFFFF0000000000000000000000000000013")}
 	finalKRecipients["localhost:8020"] = &expectedRecipient{true, d7024e.NewKademliaID("FFFFFFFFF0000000000000000000000000000014")}
-	finalKRecipients["localhost:8021"] = &expectedRecipient{true, d7024e.NewKademliaID("FFFFFFFFF0000000000000000000000000000015")}
-	finalKRecipients["localhost:8022"] = &expectedRecipient{true, d7024e.NewKademliaID("FFFFFFFFF0000000000000000000000000000016")}
-	finalKRecipients["localhost:8023"] = &expectedRecipient{true, d7024e.NewKademliaID("FFFFFFFFF0000000000000000000000000000017")}
+	finalKRecipients["localhost:8021"] = &expectedRecipient{true, d7024e.NewKademliaID("0FFFFFFFF0000000000000000000000000000015")}
+	finalKRecipients["localhost:8022"] = &expectedRecipient{true, d7024e.NewKademliaID("0FFFFFFFF0000000000000000000000000000016")}
+	finalKRecipients["localhost:8023"] = &expectedRecipient{true, d7024e.NewKademliaID("0FFFFFFFF0000000000000000000000000000017")}
 
 	cList := []testNetworkControl{
 		testNetworkControl{ //First reponse
@@ -139,7 +139,7 @@ func lookUpTestInitalSetup(target d7024e.Contact, t *testing.T) *[]testNetworkCo
 					c.CalcDistance(target.ID)
 				}
 
-				nodesFoundM, _ := json.Marshal(nodesFound)
+				nodesFoundM, _ := json.Marshal(rpc.ClosestNodes{nodesFound})
 				firstResponse := rpc.Message{rpc.CLOSEST_NODES, msg.RpcId, *firstAlphaRecipients[addr].recipientId, nodesFoundM}
 				byteMsg, _ := json.Marshal(firstResponse)
 

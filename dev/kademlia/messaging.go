@@ -90,22 +90,20 @@ func (kademlia *kademlia) handlePing(rpc_id d7024e.KademliaID, addr string) {
 
 func (kademlia *kademlia) handleFindValue(rpc_id d7024e.KademliaID, find_node rpc.FindNode, addr string) {
 	rt := routingTable.GetInstance()
-	fileName := hex.EncodeToString(find_node.NodeId[:])
+	metadata := metadata.GetInstance()
+
+	hash := hex.EncodeToString(find_node.NodeId[:])
 	var response []byte
 
-	if _, err := os.Stat(storagePath + "/" + fileName); err != nil {
-		if !os.IsNotExist(err) {
-			fmt.Println(err)
-		} else {
-			closest_nodes := rpc.ClosestNodes{rt.FindClosestContacts(&find_node.NodeId, 20)}
-			response, err = rpc.Marshal(rpc.CLOSEST_NODES, rpc_id, *rt.Me.ID, closest_nodes)
+	if metadata.HasFile(hash){
+		response, err := json.Marshal(rpc.Message{rpc.HAS_VALUE, rpc_id, *rt.Me.ID, []byte{byte(0)}})
 
-			if err != nil {
-				fmt.Println(err)
-			}
+		if err != nil {
+			fmt.Println(err)
 		}
 	} else {
-		response, err = json.Marshal(rpc.Message{rpc.HAS_VALUE, rpc_id, *rt.Me.ID, []byte{byte(0)}})
+		closest_nodes := rpc.ClosestNodes{rt.FindClosestContacts(&find_node.NodeId, 20)}
+		response, err := rpc.Marshal(rpc.CLOSEST_NODES, rpc_id, *rt.Me.ID, closest_nodes)
 
 		if err != nil {
 			fmt.Println(err)
@@ -116,21 +114,26 @@ func (kademlia *kademlia) handleFindValue(rpc_id d7024e.KademliaID, find_node rp
 }
 
 func (kademlia *kademlia) handleStore(store_file *rpc.StoreFile, addr string) {
-	var hostURL string
+	metadata := metadata.GetInstance()
 	hash := store_file.FileHash.String()
-	filePath := storagePath + "/" + hash
 
-	if store_file.Host == rpc.SENDER {
-		hostURL = addr
+	if metadata.HasFile(hash){
+		metadata.RefreshFile(hash)
 	} else {
-		hostURL = store_file.Host
-	}
+		var hostURL string
+		filePath := storagePath + "/" + hash
 
-	hostURL += "/storage/" + hash
-	err := kademlia.network.FetchFile(hostURL, filePath)
-	if err == nil {
-		md := metadata.GetInstance()
-		md.AddFile(filePath, hash, false, calcTimeToLive(&store_file.FileHash))
+		if store_file.Host == rpc.SENDER {
+			hostURL = addr
+		} else {
+			hostURL = store_file.Host
+		}
+
+		hostURL += "/storage/" + hash
+		err := kademlia.network.FetchFile(hostURL, filePath)
+		if err == nil {
+			metadata.AddFile(filePath, hash, false, calcTimeToLive(&store_file.FileHash))
+		}
 		fmt.Println("successfully stored a new file!")
 	}
 }
