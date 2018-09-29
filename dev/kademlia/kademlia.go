@@ -8,6 +8,7 @@ import (
 	"io"
 	"math"
 	"os"
+	"path/filepath"
 	"sync"
 	"time"
 
@@ -35,8 +36,8 @@ type kademliaMessage struct {
 var instance *kademlia
 var once sync.Once
 
-var storagePath string = "/kademlia/storage/"
-var downLoadPath string = "/kademlia/dowloads/"
+var storagePath string
+var downLoadPath string
 
 var maxTTL float64 = float64(24 * time.Hour)
 var coefficentTTL float64 = maxTTL / math.Exp(160)
@@ -52,6 +53,8 @@ const returnHasValue = 4
 func GetInstance() *kademlia {
 	once.Do(func() {
 		instance = &kademlia{}
+		storagePath, _ = filepath.Abs("../storage/")
+		downLoadPath, _ = filepath.Abs("../downloads/")
 
 		fmt.Println("Starting timed jobs")
 		scheduleMessageBufferListGarbageCollect()
@@ -286,7 +289,6 @@ func (kademlia *kademlia) lookupSubProcedure(target d7024e.Contact, toFind *d702
 
 	//send different messages depending on type
 	if lookupType == procedureContacts {
-		fmt.Println("sending find message")
 		kademlia.sendFindContactMessage(&target, toFind, rpcID)
 	} else if lookupType == procedureValue {
 		kademlia.sendFindDataMessage(&target, toFind, rpcID)
@@ -294,7 +296,6 @@ func (kademlia *kademlia) lookupSubProcedure(target d7024e.Contact, toFind *d702
 
 	//wait until a response is retrieved
 	message := <-mBuffer.MessageChannel
-	fmt.Println("sub-proc got data")
 
 	//Return different flags and payload depending on file is found or contacts is returned
 	if message.RpcType == rpc.CLOSEST_NODES {
@@ -322,7 +323,7 @@ func (kademlia *kademlia) LookupData(id string) (filePath string, closest *d7024
 	closest, fileHost, fileWasFound := kademlia.lookupProcedure(procedureValue, fileHash)
 	if fileWasFound {
 		url := fileHost.Address + "/storage/" + id
-		filePath = downLoadPath + id
+		filePath = downLoadPath + "/" + id
 		kademlia.network.FetchFile(url, filePath)
 		kademlia.sendStoreMessage(&closest.Contacts[0], d7024e.NewRandomKademliaID(), fileHash, fileHost.Address)
 	}
@@ -346,7 +347,7 @@ func (kademlia *kademlia) StoreFile(filePath string) {
 
 	hash := h.Sum(nil)
 	newFileName := hex.EncodeToString(hash)
-	newPath := storagePath + newFileName
+	newPath := storagePath + "/" + newFileName
 	os.Rename(filePath, newPath)
 
 	kademliaHash := d7024e.NewKademliaID(newFileName)
@@ -360,17 +361,17 @@ func (kademlia *kademlia) StoreFile(filePath string) {
 }
 
 func (kademlia *kademlia) Join(ip string, port int) bool {
-	fmt.Printf("joining %q on port %d", ip, port)
-	rpcID := d7024e.NewRandomKademliaID()
-	bootstrapContact := d7024e.NewContact(d7024e.NewRandomKademliaID(), fmt.Sprintf("%s:%d", ip, port))
-	mBuffer := messageBufferList.NewMessageBuffer(rpcID)
-	mBufferList := messageBufferList.GetInstance()
-	mBufferList.AddMessageBuffer(mBuffer)
 	rt := routingTable.GetInstance()
+	fmt.Println(fmt.Sprintf("joining %q on port %d", ip, port))
+	bootstrapContact := d7024e.NewContact(d7024e.NewRandomKademliaID(), fmt.Sprintf("%s:%d", ip, port))
 
-	retry := 0
-	for retry < 3 {
-		fmt.Printf("Trying to connect. Try number %d", retry)
+	retry := 1
+	for retry < 4 {
+		rpcID := d7024e.NewRandomKademliaID()
+		mBuffer := messageBufferList.NewMessageBuffer(rpcID)
+		mBufferList := messageBufferList.GetInstance()
+		mBufferList.AddMessageBuffer(mBuffer)
+		fmt.Println("Trying to connect. Try number ", retry)
 		kademlia.sendFindContactMessage(&bootstrapContact, rt.Me.ID, rpcID)
 
 		//wait until a response is

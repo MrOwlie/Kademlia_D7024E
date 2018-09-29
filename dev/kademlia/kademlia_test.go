@@ -46,6 +46,7 @@ func (net *testNetwork) SendMessage(addr string, data *[]byte) {
 	}
 
 	var sentMessage = rpc.Message{}
+
 	json.Unmarshal(*data, &sentMessage)
 
 	go checkData.CheckFunction(sentMessage, addr)
@@ -116,7 +117,6 @@ func lookUpTestInitalSetup(target d7024e.Contact, t *testing.T) *[]testNetworkCo
 		testNetworkControl{ //First reponse
 			func(msg rpc.Message, addr string) {
 
-				
 				if recipient, ok := firstAlphaRecipients[addr]; ok && recipient.valid {
 					recipient.valid = false
 				} else {
@@ -184,7 +184,7 @@ func lookUpTestInitalSetup(target d7024e.Contact, t *testing.T) *[]testNetworkCo
 
 		testNetworkControl{ //Third reponse
 			func(msg rpc.Message, addr string) {
-			
+
 				if recipient, ok := firstAlphaRecipients[addr]; ok && recipient.valid {
 					recipient.valid = false
 				} else {
@@ -775,9 +775,139 @@ func TestPing(t *testing.T) {
 
 	net := testNetwork{}
 	net.CheckList = cList
+	kadem.SetNetworkHandler(&net)
 
 	kadem.HandleIncomingRPC(d, "10.10.10.10:1000")
 	wg1.Wait()
+}
+
+func TestReturnContacts(t *testing.T) {
+	rt := routingTable.GetInstance()
+	kadem := GetInstance()
+	rt.Me.ID = d7024e.NewKademliaID("F000000000000000000000000000000000000000")
+	var wg1, wg2 sync.WaitGroup
+	wg1.Add(1)
+	wg2.Add(1)
+
+	checkdata1 := make(map[string]bool)
+	checkdata2 := make(map[string]bool)
+
+	rpc1 := d7024e.NewRandomKademliaID()
+	rpc2 := d7024e.NewRandomKademliaID()
+	sender := d7024e.NewKademliaID("FFFFF00000000000000000000000000000000000")
+	senderAddr := "10.10.10.10:1000"
+
+	init := func(id string, ip string) *d7024e.Contact {
+		v := d7024e.NewContact(d7024e.NewKademliaID(id), ip)
+		checkdata1[id] = true
+		checkdata1[ip] = true
+		checkdata2[id] = true
+		checkdata2[ip] = true
+		return &v
+	}
+
+	var cList []testNetworkControl
+	cList = append(cList, testNetworkControl{
+		func(sentMessage rpc.Message, addr string) {
+			assertEqual(t, addr, "10.10.10.10:1000")
+			fmt.Println("Correct address in response!")
+
+			assertEqual(t, sentMessage.RpcType, rpc.CLOSEST_NODES)
+			fmt.Println("RPC Type is correct!")
+			assertEqual(t, rt.Me.ID.Equals(&sentMessage.SenderId), true)
+			fmt.Println("Sender ID is correct!")
+
+			var responseNodes rpc.ClosestNodes
+			json.Unmarshal(sentMessage.RpcData, &responseNodes)
+
+			assertEqual(t, 20, len(responseNodes.Closest))
+
+			for _, elem := range responseNodes.Closest {
+				assertEqual(t, checkdata1[elem.ID.String()], true)
+				assertEqual(t, checkdata1[elem.Address], true)
+				checkdata1[elem.ID.String()] = false
+				checkdata1[elem.Address] = false
+			}
+
+			wg1.Done()
+		},
+	})
+	cList = append(cList, testNetworkControl{
+		func(sentMessage rpc.Message, addr string) {
+			assertEqual(t, addr, "10.10.10.10:1000")
+			fmt.Println("Correct address in response!")
+
+			assertEqual(t, sentMessage.RpcType, rpc.CLOSEST_NODES)
+			fmt.Println("RPC Type is correct!")
+			assertEqual(t, rt.Me.ID.Equals(&sentMessage.SenderId), true)
+			fmt.Println("Sender ID is correct!")
+
+			var responseNodes rpc.ClosestNodes
+			json.Unmarshal(sentMessage.RpcData, &responseNodes)
+
+			assertEqual(t, 20, len(responseNodes.Closest))
+
+			for _, elem := range responseNodes.Closest {
+				assertEqual(t, checkdata2[elem.ID.String()], true)
+				assertEqual(t, checkdata2[elem.Address], true)
+				checkdata2[elem.ID.String()] = false
+				checkdata2[elem.Address] = false
+			}
+
+			wg2.Done()
+		},
+	})
+
+	net := testNetwork{}
+	net.CheckList = cList
+	kadem.SetNetworkHandler(&net)
+
+	targetnode := init("F00000000000000000000000000000000000000F", "10.10.10.25:1000")
+
+	kadem.addContact(init("F000000000000000000000000000000000000015", "10.10.10.10:1000"))
+	kadem.addContact(init("F000000000000000000000000000000000000001", "10.10.10.11:1000"))
+	kadem.addContact(init("F000000000000000000000000000000000000002", "10.10.10.12:1000"))
+	kadem.addContact(init("F000000000000000000000000000000000000003", "10.10.10.13:1000"))
+	kadem.addContact(init("F000000000000000000000000000000000000004", "10.10.10.14:1000"))
+	kadem.addContact(init("F000000000000000000000000000000000000005", "10.10.10.15:1000"))
+	kadem.addContact(init("F000000000000000000000000000000000000006", "10.10.10.16:1000"))
+	kadem.addContact(init("F000000000000000000000000000000000000007", "10.10.10.17:1000"))
+	kadem.addContact(init("F000000000000000000000000000000000000008", "10.10.10.18:1000"))
+	kadem.addContact(init("F000000000000000000000000000000000000009", "10.10.10.19:1000"))
+	kadem.addContact(init("F00000000000000000000000000000000000000A", "10.10.10.20:1000"))
+	kadem.addContact(init("F00000000000000000000000000000000000000B", "10.10.10.21:1000"))
+	kadem.addContact(init("F00000000000000000000000000000000000000C", "10.10.10.22:1000"))
+	kadem.addContact(init("F00000000000000000000000000000000000000D", "10.10.10.23:1000"))
+	kadem.addContact(init("F00000000000000000000000000000000000000E", "10.10.10.24:1000"))
+	kadem.addContact(targetnode)
+	kadem.addContact(init("F000000000000000000000000000000000000010", "10.10.10.26:1000"))
+	kadem.addContact(init("F000000000000000000000000000000000000012", "10.10.10.27:1000"))
+	kadem.addContact(init("F000000000000000000000000000000000000013", "10.10.10.28:1000"))
+	kadem.addContact(init("F000000000000000000000000000000000000014", "10.10.10.29:1000"))
+
+	return
+
+	tofind := rpc.FindNode{*targetnode.ID}
+
+	tofindM, _ := json.Marshal(tofind)
+	response := rpc.Message{rpc.FIND_NODE, *rpc1, *sender, tofindM}
+	byteMsg, _ := json.Marshal(response)
+
+	kadem.HandleIncomingRPC(byteMsg, senderAddr)
+	wg1.Wait()
+
+	kadem.addContact(init("F000000000000000000000000000000000000016", "10.10.10.30:1000"))
+	checkdata2["F000000000000000000000000000000000000001"] = false
+	checkdata2["10.10.10.11:1000"] = false
+	checkdata2["F000000000000000000000000000000000000016"] = true
+	checkdata2["10.10.10.30:1000"] = true
+
+	response2 := rpc.Message{rpc.FIND_NODE, *rpc2, *sender, tofindM}
+	byteMsg2, _ := json.Marshal(response2)
+
+	kadem.HandleIncomingRPC(byteMsg2, senderAddr)
+	wg2.Wait()
+
 }
 
 func helperReturnMarshal(data interface{}) []byte {
@@ -786,7 +916,6 @@ func helperReturnMarshal(data interface{}) []byte {
 }
 
 func assertEqual(t *testing.T, a interface{}, b interface{}) {
-	fmt.Println("q ", a, " ", b)
 	if a != b {
 		panic(fmt.Sprintf("%s != %s", a, b))
 		//t.Fatalf("%s != %s", a, b)

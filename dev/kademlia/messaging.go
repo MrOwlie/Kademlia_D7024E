@@ -117,7 +117,7 @@ func (kademlia *kademlia) handleFindValue(rpc_id d7024e.KademliaID, find_node rp
 func (kademlia *kademlia) handleStore(store_file *rpc.StoreFile, addr string) {
 	var hostURL string
 	hash := store_file.FileHash.String()
-	filePath := storagePath + hash
+	filePath := storagePath + "/" + hash
 
 	if store_file.Host == rpc.SENDER {
 		hostURL = addr

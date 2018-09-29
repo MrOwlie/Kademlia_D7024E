@@ -7,12 +7,13 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"path/filepath"
 	"strconv"
 	"sync"
 )
 
 const MAX_PACKET_SIZE int = 5120 //TODO Calculate actual max packet size.
-var storagePath string = "/kademlia/storage/"
+var storagePath, _ = filepath.Abs("../storage")
 
 type Handler interface {
 	HandleIncomingRPC([]byte, string)
@@ -66,6 +67,7 @@ func (network *network) Listen(wg *sync.WaitGroup) {
 	for {
 		var data [MAX_PACKET_SIZE]byte
 		n, addr, err := conn.ReadFromUDP(data[0:])
+		fmt.Println("got msg")
 		if err != nil {
 			fmt.Println(err)
 			continue

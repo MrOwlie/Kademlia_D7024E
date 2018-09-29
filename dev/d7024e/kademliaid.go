@@ -3,6 +3,7 @@ package d7024e
 import (
 	"encoding/hex"
 	"math/rand"
+	"sync"
 	"time"
 )
 
@@ -11,6 +12,8 @@ const IDLength = 20
 
 // type definition of a KademliaID
 type KademliaID [IDLength]byte
+
+var randMut sync.Mutex
 
 // NewKademliaID returns a new instance of a KademliaID based on the string input
 func NewKademliaID(data string) *KademliaID {
@@ -27,6 +30,10 @@ func NewKademliaID(data string) *KademliaID {
 // NewRandomKademliaID returns a new instance of a random KademliaID,
 // change this to a better version if you like
 func NewRandomKademliaID() *KademliaID {
+	randMut.Lock()
+	defer randMut.Unlock()
+	time.Sleep(time.Nanosecond * 3)
+
 	rand.Seed(time.Now().UnixNano())
 	newKademliaID := KademliaID{}
 	for i := 0; i < IDLength; i++ {

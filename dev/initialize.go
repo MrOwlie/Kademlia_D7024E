@@ -3,19 +3,22 @@ package main
 import (
 	"fmt"
 	"io/ioutil"
+	"net"
 	"os"
+	"path/filepath"
 	"regexp"
 	"strconv"
 	"strings"
 	"sync"
 
 	"./kademlia"
+
 	"./network"
 )
 
-var storagePath string = "What ever the storage path is" //TODO fix this
-
 func main() {
+
+	storagePath, _ := filepath.Abs("../storage")
 
 	args := os.Args[1:]
 	var ownPort, ip, port string
@@ -30,8 +33,12 @@ func main() {
 		ownPort = args[2]
 
 		if !validIP4(ip) {
-			fmt.Printf("%q is not a valid ip-address, exiting.", ip)
-			return
+			res, err := net.LookupHost(ip)
+			if err != nil {
+				fmt.Println(ip, " is not a valid ip-address or host-name, exiting.")
+				return
+			}
+			ip = res[0]
 		}
 		if !validPort(port) {
 			fmt.Printf("%q is not a valid port number, exiting.", port)
@@ -50,9 +57,15 @@ func main() {
 	}
 	iOwnPort, _ = strconv.Atoi(ownPort)
 
-	os.Mkdir(storagePath, 0766)
+	if ex, perr := pathExists(storagePath); perr != nil {
+		fmt.Println("file system error: ", perr)
+		return
+	} else if !ex {
+		os.Mkdir(storagePath, 0766)
+	}
 
 	var kadem = kademlia.GetInstance()
+	return
 
 	network.SetPort(iOwnPort)
 	network.SetHandler(kadem)
@@ -67,9 +80,9 @@ func main() {
 	if performJoin && !kadem.Join(ip, iPort) {
 		return
 	}
-	if performJoin {
+	/*if performJoin {
 		kadem.IdleBucketReExploration()
-	}
+	}*/
 
 	var action, param1 string
 	for {
@@ -116,4 +129,15 @@ func validPort(port string) bool {
 		return true
 	}
 	return false
+}
+
+func pathExists(path string) (bool, error) {
+	_, err := os.Stat(path)
+	if err == nil {
+		return true, nil
+	}
+	if os.IsNotExist(err) {
+		return false, nil
+	}
+	return true, err
 }
