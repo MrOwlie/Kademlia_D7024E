@@ -6,11 +6,9 @@ import (
 	"time"
 )
 
-const republishTime = 60
 
 type MetaData struct {
 	filePath        string
-	hash            string
 	isPinned        bool
 	lastRepublish   time.Time
 	timeOfInsertion time.Time
@@ -18,7 +16,7 @@ type MetaData struct {
 }
 
 type FileMetaData struct {
-	fileData map[string]MetaData
+	fileData map[string]*MetaData
 	mutex    sync.Mutex
 }
 
@@ -28,14 +26,14 @@ var once sync.Once
 func GetInstance() *FileMetaData {
 	once.Do(func() {
 		instance = FileMetaData{}
-		instance.fileData = make(map[string]MetaData)
+		instance.fileData = make(map[string]*MetaData)
 	})
 	return &instance
 }
 
-func (metaData *MetaData) TimeToRepublish() bool {
+func (metaData *MetaData) TimeToRepublish(republishInterval time.Duration) bool {
 	elapsed := time.Since(metaData.lastRepublish)
-	return (elapsed.Minutes() > republishTime)
+	return (elapsed > republishInterval)
 }
 
 func (metaData *MetaData) HasExpired() bool {
@@ -44,8 +42,15 @@ func (metaData *MetaData) HasExpired() bool {
 	return currentTime.After(timeAlive)
 }
 
+func (metaData *MetaData) Refresh() {
+	metaData.lastRepublish = time.Now()
+	metaData.timeOfInsertion = time.Now()
+}
+
 func (fileMetaData *FileMetaData) FilesToDelete() (filesToDelete []string) {
 	fileMetaData.mutex.Lock()
+	defer fileMetaData.mutex.Unlock()
+
 	var keys []string
 
 	for k := range fileMetaData.fileData {
@@ -59,66 +64,72 @@ func (fileMetaData *FileMetaData) FilesToDelete() (filesToDelete []string) {
 	for i := 0; i < len(keys); i++ {
 		delete(fileMetaData.fileData, keys[i])
 	}
-
-	fileMetaData.mutex.Unlock()
 	return
 }
 
-func (fileMetaData *FileMetaData) FilesToRepublish() (filesToRepublish []string) {
+func (fileMetaData *FileMetaData) FilesToRepublish(republishInterval time.Duration) (filesToRepublish []string) {
 	fileMetaData.mutex.Lock()
-	for k := range fileMetaData.fileData {
-		metaData := fileMetaData.fileData[k]
-		if !metaData.isPinned && metaData.HasExpired() {
-			filesToRepublish = append(filesToRepublish, metaData.filePath)
+	defer fileMetaData.mutex.Unlock()
+	
+	for hash := range fileMetaData.fileData {
+		metaData := fileMetaData.fileData[hash]
+		if !metaData.isPinned && metaData.TimeToRepublish(republishInterval) {
+			filesToRepublish = append(filesToRepublish, hash)
 		}
 	}
-	fileMetaData.mutex.Unlock()
 	return
 }
 
-func (fileMetaData *FileMetaData) HasFile(hash string) bool {
+func (fileMetaData *FileMetaData) HasFile(hash string) (hasFile bool) {
 	fileMetaData.mutex.Lock()
-	_, has := fileMetaData.fileData[hash]
-	fileMetaData.mutex.Unlock()
-	return has
+	defer fileMetaData.mutex.Unlock()
+
+	_, hasFile = fileMetaData.fileData[hash]
+	return
 }
 
-func (fileMetaData *FileMetaData) GetMetaData(hash string) (metaData *MetaData, found bool) {
+func (fileMetaData *FileMetaData) RefreshFile(hash string) {
 	fileMetaData.mutex.Lock()
-	*metaData, found = fileMetaData.fileData[hash]
-	fileMetaData.mutex.Unlock()
-	return
+	defer fileMetaData.mutex.Unlock()
+
+	metadata, hasFile := fileMetaData.fileData[hash]
+	if hasFile {
+		metadata.Refresh()
+	}
 }
 
 func (fileMetaData *FileMetaData) Pin(hash string) {
 	fileMetaData.mutex.Lock()
+	defer fileMetaData.mutex.Unlock()
 	metaData, found := fileMetaData.fileData[hash]
 	if found {
 		metaData.isPinned = true
 	} else {
-		fmt.Println("No file with hash: %s \nwas found", hash)
+		fmt.Printf("No file with hash: %s \nwas found\n", hash)
 	}
-	fileMetaData.mutex.Unlock()
 }
 
 func (fileMetaData *FileMetaData) Unpin(hash string) {
 	fileMetaData.mutex.Lock()
+	defer fileMetaData.mutex.Unlock()
+
 	metaData, found := fileMetaData.fileData[hash]
 	if found {
 		metaData.isPinned = false
 		metaData.timeOfInsertion = time.Now()
 	} else {
-		fmt.Println("No file with hash: %s \nwas found", hash)
+		fmt.Printf("No file with hash: %s \nwas found\n", hash)
 	}
-	fileMetaData.mutex.Unlock()
 }
 
 func (fileMetaData *FileMetaData) AddFile(filePath string, hash string, pinned bool, timeToLive time.Duration) {
 	fileMetaData.mutex.Lock()
-	if !fileMetaData.HasFile(hash){
-		fileMetaData.fileData[hash] = MetaData{filePath, hash, pinned, time.Now(), time.Now(), timeToLive}
+	defer fileMetaData.mutex.Unlock()
+
+	_, found := fileMetaData.fileData[hash]
+	if found {
+		fmt.Println("File already exists")
 	} else {
-		fmt.Println("File is already stored")
+		fileMetaData.fileData[hash] = &MetaData{filePath, pinned, time.Now(), time.Now(), timeToLive}
 	}
-	fileMetaData.mutex.Unlock()
 }

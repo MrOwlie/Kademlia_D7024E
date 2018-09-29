@@ -311,9 +311,9 @@ func (kademlia *kademlia) lookupSubProcedure(target d7024e.Contact, toFind *d702
 
 	//Return different flags and payload depending on file is found or contacts is returned
 	if message.RpcType == rpc.CLOSEST_NODES {
-		var contacts []d7024e.Contact
+		var contacts rpc.ClosestNodes
 		json.Unmarshal(message.RpcData, &contacts)
-		retMessage := kademliaMessage{returnContacts, contacts}
+		retMessage := kademliaMessage{returnContacts, contacts.Closest}
 		fmt.Println("returning contacts ")
 		ch <- retMessage
 		close(ch)
