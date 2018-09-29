@@ -255,6 +255,7 @@ func TestFindNode(t *testing.T) {
 				nodesFound[0].CalcDistance(target.ID)
 
 				nodesFoundM, _ := json.Marshal(nodesFound)
+				println("test ", addr)
 				response := rpc.Message{rpc.CLOSEST_NODES, msg.RpcId, *finalKRecipients[addr].recipientId, nodesFoundM}
 				byteMsg, _ := json.Marshal(response)
 

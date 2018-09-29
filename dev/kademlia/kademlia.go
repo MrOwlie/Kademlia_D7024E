@@ -88,7 +88,7 @@ func (kademlia *kademlia) lookupProcedure(procedureType int, target *d7024e.Kade
 	var fileHost *d7024e.Contact
 	fileWasFound := false
 
-	var chans []chan kademliaMessage
+	var chans []*chan kademliaMessage
 
 	queriedAll := false
 	for queriedAll == false {
@@ -107,7 +107,7 @@ func (kademlia *kademlia) lookupProcedure(procedureType int, target *d7024e.Kade
 				if queried < alpha {
 					if _, value := queriedAddresses[contact.Address]; !value {
 						ch := make(chan kademliaMessage)
-						chans = append(chans, ch)
+						chans = append(chans, &ch)
 						go kademlia.lookupSubProcedure(contact, target, procedureType, ch)
 						queried = queried + 1
 						queriedAddresses[contact.Address] = true
@@ -126,22 +126,27 @@ func (kademlia *kademlia) lookupProcedure(procedureType int, target *d7024e.Kade
 				startIndex = len(chans) - alpha
 			}
 			for {
+				fmt.Println("started new waittime")
 				timeWaited := time.Since(startTime)
 				allowedTimeouts := int(timeWaited.Seconds()) / incrementalLimit
 
 				for i := startIndex; i < len(chans); i++ {
 					select {
-					case x, ok := <-chans[i]:
+					case x, ok := <-*chans[i]:
 						if ok {
 							if x.returnType == returnContacts {
+								fmt.Println("got back contacts")
 								for i, c := range x.contacts {
+									x.contacts[i].CalcDistance(target)
 									if c.ID == rTable.Me.ID {
 										x.contacts = append(x.contacts[0:i-1], x.contacts[i+1:len(x.contacts)]...)
 									}
 								}
+								fmt.Println("appending ", len(x.contacts))
 								candids.Append(x.contacts)
 							} else if x.returnType == returnHasValue {
 								for i, c := range candids.Contacts {
+									x.contacts[i].CalcDistance(target)
 									if c.ID == candids.Contacts[0].ID {
 										candids.Contacts = append(candids.Contacts[0:i-1], candids.Contacts[i+1:len(candids.Contacts)]...)
 									}
@@ -162,7 +167,6 @@ func (kademlia *kademlia) lookupProcedure(procedureType int, target *d7024e.Kade
 				}
 
 				if allowedTimeouts < 0 {
-					fmt.Println("waited one round, sleeping")
 					time.Sleep(1000 * time.Millisecond)
 				} else {
 					break
@@ -170,12 +174,14 @@ func (kademlia *kademlia) lookupProcedure(procedureType int, target *d7024e.Kade
 			}
 
 			//go trhough all channels, save responses and remove clsoed channels
+			fmt.Println("going through all channels")
 			for i := len(chans) - 1; i >= 0; i-- {
 				select {
-				case x, ok := <-chans[i]:
+				case x, ok := <-*chans[i]:
 					if ok {
 						if x.returnType == returnContacts {
 							for i, c := range x.contacts {
+								x.contacts[i].CalcDistance(target)
 								if c.ID == rTable.Me.ID {
 									x.contacts = append(x.contacts[0:i-1], x.contacts[i+1:len(x.contacts)]...)
 								}
@@ -183,6 +189,7 @@ func (kademlia *kademlia) lookupProcedure(procedureType int, target *d7024e.Kade
 							candids.Append(x.contacts)
 						} else if x.returnType == returnHasValue {
 							for i, c := range candids.Contacts {
+								x.contacts[i].CalcDistance(target)
 								if c.ID == x.contacts[0].ID {
 									candids.Contacts = append(candids.Contacts[0:i-1], candids.Contacts[i+1:len(candids.Contacts)]...)
 								}
@@ -206,10 +213,12 @@ func (kademlia *kademlia) lookupProcedure(procedureType int, target *d7024e.Kade
 			//save k closest distinct contacts for next iteration
 			candids.Sort()
 			distinctContacts := candids.GetDistinctContacts(valueK)
+			println("select ", len(distinctContacts))
 			candids := &d7024e.ContactCandidates{}
 			candids.Append(distinctContacts)
 
 		} else { // last iteration gave no closer nodes, query all
+			fmt.Println("quering all")
 			queriedAll = true
 
 			//choose k closest nodes
@@ -223,12 +232,13 @@ func (kademlia *kademlia) lookupProcedure(procedureType int, target *d7024e.Kade
 			for _, contact := range iterCandids {
 				if _, value := queriedAddresses[contact.Address]; !value {
 					ch := make(chan kademliaMessage)
-					chans = append(chans, ch)
+					chans = append(chans, &ch)
 					go kademlia.lookupSubProcedure(contact, target, procedureType, ch)
 				}
 			}
 
 			//wait for responses or time-outs for all open queries
+			fmt.Println("waiting for response from all")
 			for {
 				if len(chans) == 0 {
 					break
@@ -236,9 +246,10 @@ func (kademlia *kademlia) lookupProcedure(procedureType int, target *d7024e.Kade
 
 				for i := len(chans) - 1; i >= 0; i-- {
 					select {
-					case x, ok := <-chans[i]:
+					case x, ok := <-*chans[i]:
 						if ok {
 							if x.returnType == returnContacts {
+								fmt.Println("got response, ", i, " remaining")
 								for i, c := range x.contacts {
 									if c.ID == rTable.Me.ID {
 										x.contacts = append(x.contacts[0:i-1], x.contacts[i+1:len(x.contacts)]...)
@@ -272,6 +283,7 @@ func (kademlia *kademlia) lookupProcedure(procedureType int, target *d7024e.Kade
 		}
 
 	}
+	fmt.Println("returning")
 	return candids, fileHost, fileWasFound
 
 }
@@ -296,8 +308,9 @@ func (kademlia *kademlia) lookupSubProcedure(target d7024e.Contact, toFind *d702
 	//Return different flags and payload depending on file is found or contacts is returned
 	if message.RpcType == rpc.CLOSEST_NODES {
 		var contacts []d7024e.Contact
-		json.Unmarshal(message.RpcData, contacts)
+		json.Unmarshal(message.RpcData, &contacts)
 		retMessage := kademliaMessage{returnContacts, contacts}
+		fmt.Println("returning contacts ")
 		ch <- retMessage
 		close(ch)
 	} else if message.RpcType == rpc.HAS_VALUE {
