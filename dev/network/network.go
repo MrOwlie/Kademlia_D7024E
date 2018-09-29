@@ -108,7 +108,7 @@ func (network *network) ListenFileServer() {
 
 func (network *network) FetchFile(url string, filePath string) error {
 
-	resp, err := http.Get(url)
+	resp, err := http.Get("http://"+url)
 	if err != nil {
 		fmt.Println(err)
 		return err
