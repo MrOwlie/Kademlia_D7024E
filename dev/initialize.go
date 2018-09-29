@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"io/ioutil"
 	"net"
 	"os"
 	"path/filepath"
@@ -32,7 +31,7 @@ func main() {
 		port = args[1]
 		ownPort = args[2]
 
-		if !validIP4(ip) {
+		if !validIP4(ip) && ip != "localhost" {
 			res, err := net.LookupHost(ip)
 			if err != nil {
 				fmt.Println(ip, " is not a valid ip-address or host-name, exiting.")
@@ -65,7 +64,6 @@ func main() {
 	}
 
 	var kadem = kademlia.GetInstance()
-	return
 
 	network.SetPort(iOwnPort)
 	network.SetHandler(kadem)
@@ -99,12 +97,13 @@ func main() {
 		case action == "exit":
 			return
 		case action == "store":
-			_, err := ioutil.ReadFile(param1)
+			path, _ := filepath.Abs(param1)
+			/*_, err := ioutil.ReadFile(path)
 			if err != nil {
 				fmt.Println("An error occured while reading the file!")
-			} else {
-				kadem.StoreFile("hej")
-			}
+			} else {*/
+			kadem.StoreFile(path)
+			//}
 		case action == "fetch":
 			kadem.LookupData(param1)
 		default:

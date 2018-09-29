@@ -114,11 +114,12 @@ func (fileMetaData *FileMetaData) Unpin(hash string) {
 }
 
 func (fileMetaData *FileMetaData) AddFile(filePath string, hash string, pinned bool, timeToLive time.Duration) {
-	fileMetaData.mutex.Lock()
-	if !fileMetaData.HasFile(hash){
+	if !fileMetaData.HasFile(hash) {
+		fileMetaData.mutex.Lock()
 		fileMetaData.fileData[hash] = MetaData{filePath, hash, pinned, time.Now(), time.Now(), timeToLive}
+		fileMetaData.mutex.Unlock()
 	} else {
 		fmt.Println("File is already stored")
 	}
-	fileMetaData.mutex.Unlock()
+
 }

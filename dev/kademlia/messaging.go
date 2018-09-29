@@ -8,15 +8,15 @@ import (
 
 	"../d7024e"
 	"../messageBufferList"
+	"../metadata"
 	"../routingTable"
 	"../rpc"
-	"../metadata"
 )
 
 //var storagePath string = "What ever the storage path is" //TODO fix this
 
 func (kademlia *kademlia) HandleIncomingRPC(data []byte, addr string) {
-	//fmt.Println("def ", addr)
+	//fmt.Println("msg ", string(data))
 	var message rpc.Message = rpc.Message{}
 	unmarshaling_err := json.Unmarshal(data, &message)
 	if unmarshaling_err != nil {
@@ -73,6 +73,7 @@ func (kademlia *kademlia) handleFindNode(rpc_id d7024e.KademliaID, find_node rpc
 		fmt.Println(err)
 	}
 
+	fmt.Println("sending closest contacts ", len(closest_nodes.Closest))
 	kademlia.network.SendMessage(addr, &response)
 }
 
@@ -130,6 +131,7 @@ func (kademlia *kademlia) handleStore(store_file *rpc.StoreFile, addr string) {
 	if err == nil {
 		md := metadata.GetInstance()
 		md.AddFile(filePath, hash, false, calcTimeToLive(&store_file.FileHash))
+		fmt.Println("successfully stored a new file!")
 	}
 }
 
