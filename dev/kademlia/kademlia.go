@@ -117,7 +117,7 @@ func (kademlia *kademlia) lookupProcedure(procedureType int, target *d7024e.Kade
 
 			//wait for the queries to return data
 			startTime := time.Now()
-			incrementalLimit := 1
+			incrementalLimit := 10
 			startIndex := 0
 			if len(chans) > alpha {
 				startIndex = len(chans) - alpha
@@ -171,6 +171,7 @@ func (kademlia *kademlia) lookupProcedure(procedureType int, target *d7024e.Kade
 				select {
 				case x, ok := <-chans[i]:
 					if ok {
+						fmt.Println("Got message")
 						if x.returnType == returnContacts {
 							for i, c := range x.contacts {
 								if c.ID == rTable.Me.ID {
@@ -202,13 +203,16 @@ func (kademlia *kademlia) lookupProcedure(procedureType int, target *d7024e.Kade
 
 			//save k closest distinct contacts for next iteration
 			candids.Sort()
+			for i := 0; i< len(candids.Contacts); i++{
+				fmt.Printf("address : %s\n", candids.Contacts[i].Address)
+			}
 			distinctContacts := candids.GetDistinctContacts(valueK)
 			candids := &d7024e.ContactCandidates{}
 			candids.Append(distinctContacts)
 
 		} else { // last iteration gave no closer nodes, query all
 			queriedAll = true
-
+			fmt.Println("No closer nodes")
 			//choose k closest nodes
 			nrQueries := valueK
 			if candids.Len() < nrQueries {
@@ -313,7 +317,7 @@ func (kademlia *kademlia) LookupContact(target *d7024e.KademliaID) (closest *d70
 	return
 }
 
-func (kademlia *kademlia) LookupData(id string) (filePath string, closest *d7024e.ContactCandidates) {
+func (kademlia *kademlia) LookupData(id string) (filePath string, closest *d7024e.ContactCandidates, fileWasFound bool) {
 	fileHash := d7024e.NewKademliaID(id)
 	closest, fileHost, fileWasFound := kademlia.lookupProcedure(procedureValue, fileHash)
 	if fileWasFound {

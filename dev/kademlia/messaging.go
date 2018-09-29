@@ -10,6 +10,7 @@ import (
 	"../messageBufferList"
 	"../routingTable"
 	"../rpc"
+	"../metadata"
 )
 
 //var storagePath string = "What ever the storage path is" //TODO fix this
@@ -125,7 +126,11 @@ func (kademlia *kademlia) handleStore(store_file *rpc.StoreFile, addr string) {
 	}
 
 	hostURL += "/storage/" + hash
-	kademlia.network.FetchFile(hostURL, filePath)
+	err := kademlia.network.FetchFile(hostURL, filePath)
+	if err == nil {
+		md := metadata.GetInstance()
+		md.AddFile(filePath, hash, false, calcTimeToLive(&store_file.FileHash))
+	}
 }
 
 func (kademlia *kademlia) sendPingMessage(contact *d7024e.Contact, rpc_id *d7024e.KademliaID) {
