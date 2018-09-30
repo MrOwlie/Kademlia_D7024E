@@ -7,13 +7,6 @@ import (
 )
 
 
-type MetaData struct {
-	filePath        string
-	isPinned        bool
-	lastRepublish   time.Time
-	timeOfInsertion time.Time
-	timeToLive      time.Duration
-}
 
 type FileMetaData struct {
 	fileData map[string]*MetaData
@@ -46,6 +39,16 @@ func (metaData *MetaData) Refresh() {
 	metaData.lastRepublish = time.Now()
 	metaData.timeOfInsertion = time.Now()
 }
+
+
+type MetaData struct {
+	filePath        string
+	isPinned        bool
+	lastRepublish   time.Time
+	timeOfInsertion time.Time
+	timeToLive      time.Duration
+}
+
 
 func (fileMetaData *FileMetaData) FilesToDelete() (filesToDelete []string) {
 	fileMetaData.mutex.Lock()

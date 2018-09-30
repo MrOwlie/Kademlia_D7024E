@@ -121,7 +121,7 @@ func (kademlia *kademlia) lookupProcedure(procedureType int, target *d7024e.Kade
 
 			//wait for the queries to return data
 			startTime := time.Now()
-			incrementalLimit := 1
+			incrementalLimit := 5
 			startIndex := 0
 			if len(chans) > alpha {
 				startIndex = len(chans) - alpha
@@ -342,7 +342,7 @@ func (kademlia *kademlia) LookupContact(target *d7024e.KademliaID) (closest []d7
 	return
 }
 
-func (kademlia *kademlia) LookupData(id string) (filePath string, closest []d7024e.Contact) {
+func (kademlia *kademlia) LookupData(id string) (filePath string, closest []d7024e.Contact, fileWasFound bool) {
 	fileHash := d7024e.NewKademliaID(id)
 	closest, fileHost, fileWasFound := kademlia.lookupProcedure(procedureValue, fileHash)
 	if fileWasFound {
