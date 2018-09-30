@@ -326,7 +326,7 @@ func (kademlia *kademlia) LookupContact(target *d7024e.KademliaID) (closest *d70
 	return
 }
 
-func (kademlia *kademlia) LookupData(id string) (filePath string, closest *d7024e.ContactCandidates) {
+func (kademlia *kademlia) LookupData(id string) (filePath string, closest *d7024e.ContactCandidates, fileWasFound bool) {
 	fileHash := d7024e.NewKademliaID(id)
 	closest, fileHost, fileWasFound := kademlia.lookupProcedure(procedureValue, fileHash)
 	if fileWasFound {

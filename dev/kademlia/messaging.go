@@ -4,7 +4,6 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"os"
 
 	"../d7024e"
 	"../messageBufferList"
@@ -94,16 +93,17 @@ func (kademlia *kademlia) handleFindValue(rpc_id d7024e.KademliaID, find_node rp
 
 	hash := hex.EncodeToString(find_node.NodeId[:])
 	var response []byte
+	var err error
 
 	if metadata.HasFile(hash){
-		response, err := json.Marshal(rpc.Message{rpc.HAS_VALUE, rpc_id, *rt.Me.ID, []byte{byte(0)}})
+		response, err = json.Marshal(rpc.Message{rpc.HAS_VALUE, rpc_id, *rt.Me.ID, []byte{byte(0)}})
 
 		if err != nil {
 			fmt.Println(err)
 		}
 	} else {
 		closest_nodes := rpc.ClosestNodes{rt.FindClosestContacts(&find_node.NodeId, 20)}
-		response, err := rpc.Marshal(rpc.CLOSEST_NODES, rpc_id, *rt.Me.ID, closest_nodes)
+		response, err = rpc.Marshal(rpc.CLOSEST_NODES, rpc_id, *rt.Me.ID, closest_nodes)
 
 		if err != nil {
 			fmt.Println(err)
