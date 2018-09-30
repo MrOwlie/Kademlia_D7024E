@@ -18,6 +18,7 @@ import (
 func main() {
 
 	storagePath, _ := filepath.Abs("../storage")
+	downloadPath, _ := filepath.Abs("../downloads")
 
 	args := os.Args[1:]
 	var ownPort, ip, port string
@@ -61,6 +62,13 @@ func main() {
 		return
 	} else if !ex {
 		os.Mkdir(storagePath, 0766)
+	}
+
+	if ex, perr := pathExists(downloadPath); perr != nil {
+		fmt.Println("file system error: ", perr)
+		return
+	} else if !ex {
+		os.Mkdir(downloadPath, 0766)
 	}
 
 	var kadem = kademlia.GetInstance()
