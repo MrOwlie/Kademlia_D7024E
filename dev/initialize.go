@@ -73,6 +73,7 @@ func main() {
 	var wgl sync.WaitGroup
 	wgl.Add(1)
 	go net.Listen(&wgl)
+	go net.ListenFileServer()
 	wgl.Wait()
 
 	if performJoin && !kadem.Join(ip, iPort) {

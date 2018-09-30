@@ -67,7 +67,6 @@ func (network *network) Listen(wg *sync.WaitGroup) {
 	for {
 		var data [MAX_PACKET_SIZE]byte
 		n, addr, err := conn.ReadFromUDP(data[0:])
-		fmt.Println("got msg")
 		if err != nil {
 			fmt.Println(err)
 			continue
@@ -104,11 +103,12 @@ func (network *network) ListenFileServer() {
 	if err != nil {
 		fmt.Println(err)
 	}
+
 }
 
 func (network *network) FetchFile(url string, filePath string) error {
 
-	resp, err := http.Get("http://"+url)
+	resp, err := http.Get("http://" + url)
 	if err != nil {
 		fmt.Println(err)
 		return err
