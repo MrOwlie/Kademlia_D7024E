@@ -49,6 +49,7 @@ const procedureContacts = 1
 const procedureValue = 2
 const returnContacts = 3
 const returnHasValue = 4
+const returnTimedOut = 5
 
 func GetInstance() *kademlia {
 	once.Do(func() {
@@ -147,6 +148,8 @@ func (kademlia *kademlia) lookupProcedure(procedureType int, target *d7024e.Kade
 								if !fileWasFound {
 									fileWasFound = true
 								}
+							} else if x.returnType == returnTimedOut {
+								candids.RemoveContact(x.contacts[0].ID)
 							}
 						}
 					default:
@@ -188,6 +191,8 @@ func (kademlia *kademlia) lookupProcedure(procedureType int, target *d7024e.Kade
 							if !fileWasFound {
 								fileWasFound = true
 							}
+						} else if x.returnType == returnTimedOut {
+							candids.RemoveContact(x.contacts[0].ID)
 						}
 					}
 					chans = append(chans[:i], chans[i+1:]...)
@@ -257,6 +262,8 @@ func (kademlia *kademlia) lookupProcedure(procedureType int, target *d7024e.Kade
 								if !fileWasFound {
 									fileWasFound = true
 								}
+							} else if x.returnType == returnTimedOut {
+								candids.RemoveContact(x.contacts[0].ID)
 							}
 						}
 						chans = append(chans[:i], chans[i+1:]...)
@@ -318,6 +325,13 @@ func (kademlia *kademlia) lookupSubProcedure(target d7024e.Contact, toFind *d702
 		contacts := []d7024e.Contact{target}
 		retMessage := kademliaMessage{returnHasValue, contacts}
 		fmt.Println("returning hasfile")
+		ch <- retMessage
+		close(ch)
+	} else {
+		//return target so main routine knows which contact has timed out
+		contacts := []d7024e.Contact{target}
+		retMessage := kademliaMessage{returnTimedOut, contacts}
+		fmt.Println("returning timed out")
 		ch <- retMessage
 		close(ch)
 	}
