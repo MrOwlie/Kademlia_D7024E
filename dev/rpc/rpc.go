@@ -9,13 +9,13 @@ import (
 const FIND_NODE = "find_node"
 const CLOSEST_NODES = "closest_nodes"
 const FIND_VALUE = "find_value"
-const HAS_VALUE = "find_value"
+const HAS_VALUE = "has_value"
 const STORE = "store"
 const PING = "ping"
 const PONG = "pong"
 const TIME_OUT = "time_out"
 
-const SENDER = "sender" 
+const SENDER = "sender"
 
 type Message struct {
 	RpcType  string
@@ -34,7 +34,7 @@ type ClosestNodes struct {
 
 type StoreFile struct {
 	FileHash d7024e.KademliaID
-	Host string
+	Host     string
 }
 
 func Marshal(rpc_type string, rpc_id d7024e.KademliaID, sender_id d7024e.KademliaID, rpc_data interface{}) ([]byte, error) {

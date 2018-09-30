@@ -18,6 +18,7 @@ import (
 func main() {
 
 	storagePath, _ := filepath.Abs("../storage")
+	downloadPath, _ := filepath.Abs("../downloads")
 
 	args := os.Args[1:]
 	var ownPort, ip, port string
@@ -63,6 +64,13 @@ func main() {
 		os.Mkdir(storagePath, 0766)
 	}
 
+	if ex, perr := pathExists(downloadPath); perr != nil {
+		fmt.Println("file system error: ", perr)
+		return
+	} else if !ex {
+		os.Mkdir(downloadPath, 0766)
+	}
+
 	var kadem = kademlia.GetInstance()
 
 	network.SetPort(iOwnPort)
@@ -73,6 +81,7 @@ func main() {
 	var wgl sync.WaitGroup
 	wgl.Add(1)
 	go net.Listen(&wgl)
+	go net.ListenFileServer()
 	wgl.Wait()
 
 	if performJoin && !kadem.Join(ip, iPort) {

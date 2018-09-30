@@ -36,6 +36,7 @@ func (kademlia *kademlia) HandleIncomingRPC(data []byte, addr string) {
 		kademlia.handlePing(message.RpcId, addr)
 
 	case rpc.FIND_VALUE:
+		fmt.Println("got a find value from ", message.SenderId.String())
 		var find_node rpc.FindNode
 		json.Unmarshal(message.RpcData, &find_node)
 		kademlia.handleFindValue(message.RpcId, find_node, addr)
@@ -49,7 +50,7 @@ func (kademlia *kademlia) HandleIncomingRPC(data []byte, addr string) {
 	kademlia.HandleTimeout(message.RpcId)*/
 
 	default:
-		if message.RpcType == rpc.CLOSEST_NODES || message.RpcType == rpc.PONG {
+		if message.RpcType == rpc.CLOSEST_NODES || message.RpcType == rpc.PONG || message.RpcType == rpc.HAS_VALUE {
 			buffer_list := messageBufferList.GetInstance()
 			m_buffer, hasId := buffer_list.GetMessageBuffer(&message.RpcId)
 			if hasId {
@@ -95,13 +96,20 @@ func (kademlia *kademlia) handleFindValue(rpc_id d7024e.KademliaID, find_node rp
 	var response []byte
 	var err error
 
+<<<<<<< HEAD
 	if metadata.HasFile(hash){
+=======
+	fmt.Println("started looking for file")
+	if metadata.HasFile(hash) {
+		fmt.Println("found file")
+>>>>>>> 2b12a8083ef00f848ec0e2e992546bbd6b849968
 		response, err = json.Marshal(rpc.Message{rpc.HAS_VALUE, rpc_id, *rt.Me.ID, []byte{byte(0)}})
 
 		if err != nil {
 			fmt.Println(err)
 		}
 	} else {
+		fmt.Println("did not find file")
 		closest_nodes := rpc.ClosestNodes{rt.FindClosestContacts(&find_node.NodeId, 20)}
 		response, err = rpc.Marshal(rpc.CLOSEST_NODES, rpc_id, *rt.Me.ID, closest_nodes)
 
@@ -117,7 +125,7 @@ func (kademlia *kademlia) handleStore(store_file *rpc.StoreFile, addr string) {
 	metadata := metadata.GetInstance()
 	hash := store_file.FileHash.String()
 
-	if metadata.HasFile(hash){
+	if metadata.HasFile(hash) {
 		metadata.RefreshFile(hash)
 	} else {
 		var hostURL string
@@ -133,8 +141,10 @@ func (kademlia *kademlia) handleStore(store_file *rpc.StoreFile, addr string) {
 		err := kademlia.network.FetchFile(hostURL, filePath)
 		if err == nil {
 			metadata.AddFile(filePath, hash, false, calcTimeToLive(&store_file.FileHash))
+			fmt.Println("successfully stored a new file!")
+		} else {
+			fmt.Println(err, " (", hostURL, ")")
 		}
-		fmt.Println("successfully stored a new file!")
 	}
 }
 

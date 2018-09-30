@@ -10,7 +10,8 @@ import (
 	"../routingTable"
 	"../rpc"
 )
-const republishInterval time.Duration = 24*time.Hour
+
+const republishInterval time.Duration = 24 * time.Hour
 
 func scheduleMessageBufferListGarbageCollect() {
 	mbList := messageBufferList.GetInstance()
@@ -66,11 +67,11 @@ func scheduleFileRepublish() {
 func (kademlia *kademlia) republishFiles() {
 	metaData := metadata.GetInstance()
 	fileHashes := metaData.FilesToRepublish(republishInterval)
-	
+
 	for _, hash := range fileHashes {
 		kademliaHash := d7024e.NewKademliaID(hash)
 		closest := kademlia.LookupContact(kademliaHash)
-		for _, contact := range closest.Contacts {
+		for _, contact := range closest {
 			kademlia.sendStoreMessage(&contact, d7024e.NewRandomKademliaID(), kademliaHash, rpc.SENDER)
 		}
 	}
