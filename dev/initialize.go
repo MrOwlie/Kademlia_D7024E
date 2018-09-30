@@ -2,20 +2,23 @@ package main
 
 import (
 	"fmt"
-	"io/ioutil"
+	"net"
 	"os"
+	"path/filepath"
 	"regexp"
 	"strconv"
 	"strings"
 	"sync"
 
 	"./kademlia"
+
 	"./network"
 )
 
-var storagePath string = "What ever the storage path is" //TODO fix this
-
 func main() {
+
+	storagePath, _ := filepath.Abs("../storage")
+	downloadPath, _ := filepath.Abs("../downloads")
 
 	args := os.Args[1:]
 	var ownPort, ip, port string
@@ -29,9 +32,13 @@ func main() {
 		port = args[1]
 		ownPort = args[2]
 
-		if !validIP4(ip) {
-			fmt.Printf("%q is not a valid ip-address, exiting.", ip)
-			return
+		if !validIP4(ip) && ip != "localhost" {
+			res, err := net.LookupHost(ip)
+			if err != nil {
+				fmt.Println(ip, " is not a valid ip-address or host-name, exiting.")
+				return
+			}
+			ip = res[0]
 		}
 		if !validPort(port) {
 			fmt.Printf("%q is not a valid port number, exiting.", port)
@@ -50,7 +57,19 @@ func main() {
 	}
 	iOwnPort, _ = strconv.Atoi(ownPort)
 
-	os.Mkdir(storagePath, 0766)
+	if ex, perr := pathExists(storagePath); perr != nil {
+		fmt.Println("file system error: ", perr)
+		return
+	} else if !ex {
+		os.Mkdir(storagePath, 0766)
+	}
+
+	if ex, perr := pathExists(downloadPath); perr != nil {
+		fmt.Println("file system error: ", perr)
+		return
+	} else if !ex {
+		os.Mkdir(downloadPath, 0766)
+	}
 
 	var kadem = kademlia.GetInstance()
 
@@ -62,14 +81,15 @@ func main() {
 	var wgl sync.WaitGroup
 	wgl.Add(1)
 	go net.Listen(&wgl)
+	go net.ListenFileServer()
 	wgl.Wait()
 
 	if performJoin && !kadem.Join(ip, iPort) {
 		return
 	}
-	if performJoin {
+	/*if performJoin {
 		kadem.IdleBucketReExploration()
-	}
+	}*/
 
 	var action, param1 string
 	for {
@@ -86,12 +106,13 @@ func main() {
 		case action == "exit":
 			return
 		case action == "store":
-			_, err := ioutil.ReadFile(param1)
+			path, _ := filepath.Abs(param1)
+			/*_, err := ioutil.ReadFile(path)
 			if err != nil {
 				fmt.Println("An error occured while reading the file!")
-			} else {
-				kadem.StoreFile("hej")
-			}
+			} else {*/
+			kadem.StoreFile(path)
+			//}
 		case action == "fetch":
 			kadem.LookupData(param1)
 		default:
@@ -116,4 +137,15 @@ func validPort(port string) bool {
 		return true
 	}
 	return false
+}
+
+func pathExists(path string) (bool, error) {
+	_, err := os.Stat(path)
+	if err == nil {
+		return true, nil
+	}
+	if os.IsNotExist(err) {
+		return false, nil
+	}
+	return true, err
 }

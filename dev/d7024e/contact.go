@@ -45,9 +45,27 @@ func (candidates *ContactCandidates) Append(contacts []Contact) {
 	candidates.Contacts = append(candidates.Contacts, contacts...)
 }
 
+// Removes all occurances of contacts with specified ID
+func (candidates *ContactCandidates) RemoveContact(target *KademliaID) {
+	for i := len(candidates.Contacts) - 1; i >= 0; i-- {
+		if candidates.Contacts[i].ID.Equals(target) {
+			if i == len(candidates.Contacts)-1 {
+				candidates.Contacts = candidates.Contacts[:i]
+			} else {
+				candidates.Contacts = append(candidates.Contacts[:i], candidates.Contacts[i+1:]...)
+			}
+		}
+	}
+}
+
 // GetContacts returns the first count number of Contacts
 func (candidates *ContactCandidates) GetContacts(count int) []Contact {
-	return candidates.Contacts[:count]
+	length := len(candidates.Contacts)
+	if count <= length {
+		return candidates.Contacts[:count]
+	} else {
+		return candidates.Contacts[:length]
+	}
 }
 
 // GetDistinctContacts returns the first count number of distinct contacts
@@ -55,9 +73,13 @@ func (candidates *ContactCandidates) GetDistinctContacts(count int) []Contact {
 	keys := make(map[string]bool)
 	list := []Contact{}
 	for _, entry := range candidates.Contacts {
+		if count <= 0 {
+			break
+		}
 		if _, value := keys[entry.Address]; !value {
 			keys[entry.Address] = true
 			list = append(list, entry)
+			count--
 		}
 	}
 	return list

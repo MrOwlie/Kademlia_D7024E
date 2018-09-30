@@ -4,10 +4,10 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"os"
 
 	"../d7024e"
 	"../messageBufferList"
+	"../metadata"
 	"../routingTable"
 	"../rpc"
 )
@@ -15,6 +15,7 @@ import (
 //var storagePath string = "What ever the storage path is" //TODO fix this
 
 func (kademlia *kademlia) HandleIncomingRPC(data []byte, addr string) {
+	//fmt.Println("msg ", string(data))
 	var message rpc.Message = rpc.Message{}
 	unmarshaling_err := json.Unmarshal(data, &message)
 	if unmarshaling_err != nil {
@@ -22,7 +23,8 @@ func (kademlia *kademlia) HandleIncomingRPC(data []byte, addr string) {
 	}
 
 	//Update contact
-	routingTable.GetInstance().AddContact(d7024e.NewContact(&message.SenderId, addr))
+	con := d7024e.NewContact(&message.SenderId, addr)
+	kademlia.addContact(&con)
 	switch message.RpcType {
 
 	case rpc.FIND_NODE:
@@ -34,6 +36,7 @@ func (kademlia *kademlia) HandleIncomingRPC(data []byte, addr string) {
 		kademlia.handlePing(message.RpcId, addr)
 
 	case rpc.FIND_VALUE:
+		fmt.Println("got a find value from ", message.SenderId.String())
 		var find_node rpc.FindNode
 		json.Unmarshal(message.RpcData, &find_node)
 		kademlia.handleFindValue(message.RpcId, find_node, addr)
@@ -47,7 +50,7 @@ func (kademlia *kademlia) HandleIncomingRPC(data []byte, addr string) {
 	kademlia.HandleTimeout(message.RpcId)*/
 
 	default:
-		if message.RpcType == rpc.CLOSEST_NODES || message.RpcType == rpc.PONG {
+		if message.RpcType == rpc.CLOSEST_NODES || message.RpcType == rpc.PONG || message.RpcType == rpc.HAS_VALUE {
 			buffer_list := messageBufferList.GetInstance()
 			m_buffer, hasId := buffer_list.GetMessageBuffer(&message.RpcId)
 			if hasId {
@@ -70,6 +73,7 @@ func (kademlia *kademlia) handleFindNode(rpc_id d7024e.KademliaID, find_node rpc
 		fmt.Println(err)
 	}
 
+	fmt.Println("sending closest contacts ", len(closest_nodes.Closest))
 	kademlia.network.SendMessage(addr, &response)
 }
 
@@ -86,22 +90,24 @@ func (kademlia *kademlia) handlePing(rpc_id d7024e.KademliaID, addr string) {
 
 func (kademlia *kademlia) handleFindValue(rpc_id d7024e.KademliaID, find_node rpc.FindNode, addr string) {
 	rt := routingTable.GetInstance()
-	fileName := hex.EncodeToString(find_node.NodeId[:])
+	metadata := metadata.GetInstance()
+
+	hash := hex.EncodeToString(find_node.NodeId[:])
 	var response []byte
+	var err error
 
-	if _, err := os.Stat(storagePath + "/" + fileName); err != nil {
-		if !os.IsNotExist(err) {
+	fmt.Println("started looking for file")
+	if metadata.HasFile(hash) {
+		fmt.Println("found file")
+		response, err = json.Marshal(rpc.Message{rpc.HAS_VALUE, rpc_id, *rt.Me.ID, []byte{byte(0)}})
+
+		if err != nil {
 			fmt.Println(err)
-		} else {
-			closest_nodes := rpc.ClosestNodes{rt.FindClosestContacts(&find_node.NodeId, 20)}
-			response, err = rpc.Marshal(rpc.CLOSEST_NODES, rpc_id, *rt.Me.ID, closest_nodes)
-
-			if err != nil {
-				fmt.Println(err)
-			}
 		}
 	} else {
-		response, err = json.Marshal(rpc.Message{rpc.HAS_VALUE, rpc_id, *rt.Me.ID, []byte{byte(0)}})
+		fmt.Println("did not find file")
+		closest_nodes := rpc.ClosestNodes{rt.FindClosestContacts(&find_node.NodeId, 20)}
+		response, err = rpc.Marshal(rpc.CLOSEST_NODES, rpc_id, *rt.Me.ID, closest_nodes)
 
 		if err != nil {
 			fmt.Println(err)
@@ -112,18 +118,30 @@ func (kademlia *kademlia) handleFindValue(rpc_id d7024e.KademliaID, find_node rp
 }
 
 func (kademlia *kademlia) handleStore(store_file *rpc.StoreFile, addr string) {
-	var hostURL string
+	metadata := metadata.GetInstance()
 	hash := store_file.FileHash.String()
-	filePath := storagePath + hash
 
-	if store_file.Host == rpc.SENDER {
-		hostURL = addr
+	if metadata.HasFile(hash) {
+		metadata.RefreshFile(hash)
 	} else {
-		hostURL = store_file.Host
-	}
+		var hostURL string
+		filePath := storagePath + "/" + hash
 
-	hostURL += "/storage/" + hash
-	kademlia.network.FetchFile(hostURL, filePath)
+		if store_file.Host == rpc.SENDER {
+			hostURL = addr
+		} else {
+			hostURL = store_file.Host
+		}
+
+		hostURL += "/storage/" + hash
+		err := kademlia.network.FetchFile(hostURL, filePath)
+		if err == nil {
+			metadata.AddFile(filePath, hash, false, calcTimeToLive(&store_file.FileHash))
+			fmt.Println("successfully stored a new file!")
+		} else {
+			fmt.Println(err, " (", hostURL, ")")
+		}
+	}
 }
 
 func (kademlia *kademlia) sendPingMessage(contact *d7024e.Contact, rpc_id *d7024e.KademliaID) {

@@ -7,12 +7,13 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"path/filepath"
 	"strconv"
 	"sync"
 )
 
 const MAX_PACKET_SIZE int = 5120 //TODO Calculate actual max packet size.
-var storagePath string = "/kademlia/storage/"
+var storagePath, _ = filepath.Abs("../storage")
 
 type Handler interface {
 	HandleIncomingRPC([]byte, string)
@@ -97,16 +98,17 @@ func (network *network) SendMessage(addr string, data *[]byte) {
 }
 
 func (network *network) ListenFileServer() {
-	http.Handle("/", http.FileServer(http.Dir(storagePath)))
+	http.Handle("/storage/", http.StripPrefix("/storage/", http.FileServer(http.Dir(storagePath))))
 	err := http.ListenAndServe(":"+strconv.Itoa(network.port), nil)
 	if err != nil {
 		fmt.Println(err)
 	}
+
 }
 
 func (network *network) FetchFile(url string, filePath string) error {
 
-	resp, err := http.Get(url)
+	resp, err := http.Get("http://" + url)
 	if err != nil {
 		fmt.Println(err)
 		return err

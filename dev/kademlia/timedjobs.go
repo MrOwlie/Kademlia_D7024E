@@ -8,11 +8,14 @@ import (
 	"../messageBufferList"
 	"../metadata"
 	"../routingTable"
+	"../rpc"
 )
+
+const republishInterval time.Duration = 24 * time.Hour
 
 func scheduleMessageBufferListGarbageCollect() {
 	mbList := messageBufferList.GetInstance()
-	ticker := time.NewTicker(5 * time.Minute)
+	ticker := time.NewTicker(10 * time.Second)
 
 	go func() {
 		for {
@@ -25,7 +28,7 @@ func scheduleMessageBufferListGarbageCollect() {
 }
 
 func scheduleIdleBucketReExploration() {
-	ticker := time.NewTicker(5 * time.Minute)
+	ticker := time.NewTicker(60 * time.Minute)
 
 	go func() {
 		for {
@@ -48,27 +51,35 @@ func (kademlia *kademlia) IdleBucketReExploration() {
 }
 
 func scheduleFileRepublish() {
-	metaData := metadata.GetInstance()
-	ticker := time.NewTicker(5 * time.Minute)
+	ticker := time.NewTicker(60 * time.Minute)
 
 	go func() {
 		kademlia := GetInstance()
 		for {
 			select {
 			case <-ticker.C:
-				fileHashes := metaData.FilesToRepublish()
-
-				for i := 0; i < len(fileHashes); i++ {
-					go kademlia.StoreFile(fileHashes[i])
-				}
+				kademlia.republishFiles()
 			}
 		}
 	}()
 }
 
+func (kademlia *kademlia) republishFiles() {
+	metaData := metadata.GetInstance()
+	fileHashes := metaData.FilesToRepublish(republishInterval)
+
+	for _, hash := range fileHashes {
+		kademliaHash := d7024e.NewKademliaID(hash)
+		closest := kademlia.LookupContact(kademliaHash)
+		for _, contact := range closest {
+			kademlia.sendStoreMessage(&contact, d7024e.NewRandomKademliaID(), kademliaHash, rpc.SENDER)
+		}
+	}
+}
+
 func scheduleCacheExpiredFileDeletion() {
 	metaData := metadata.GetInstance()
-	ticker := time.NewTicker(5 * time.Minute)
+	ticker := time.NewTicker(60 * time.Minute)
 
 	go func() {
 		//kademlia := GetInstance()
