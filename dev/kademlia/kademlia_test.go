@@ -281,7 +281,14 @@ func TestFindNode(t *testing.T) {
 	kadem.SetNetworkHandler(&net)
 
 	result, _, _ := kadem.lookupProcedure(procedureContacts, target.ID)
-	assertEqual(t, expectedResult, result)
+	if len(result) == len(expectedResult){
+		for i, c := range result {
+			assertEqual(t, c.ID.String(), expectedResult[i].ID.String())
+		}
+	} else {
+		t.Fail()
+	}
+	
 }
 
 func TestFindNodeTimeOut(t *testing.T) {
@@ -314,12 +321,32 @@ func TestFindNodeTimeOut(t *testing.T) {
 	cList := *lookUpTestInitalSetup(target, t)
 	cList[0] = testNetworkControl{ func(msg rpc.Message, addr string) {} }
 	
+	finalKRecipients["localhost:8007"].valid = false
+	finalKRecipients["localhost:8008"].valid = false
+	finalKRecipients["localhost:8009"].valid = false
+	finalKRecipients["localhost:8010"].valid = false
+	finalKRecipients["localhost:8011"].valid = false
+	finalKRecipients["localhost:8012"].valid = false
+
+	finalKRecipients["localhost:8024"] = &expectedRecipient{true, d7024e.NewKademliaID("0FFFFFFFF0000000000000000000000000000018")}
+	finalKRecipients["localhost:8025"] = &expectedRecipient{true, d7024e.NewKademliaID("0FFFFFFFF0000000000000000000000000000019")}
+	finalKRecipients["localhost:8026"] = &expectedRecipient{true, d7024e.NewKademliaID("0FFFFFFFF000000000000000000000000000001A")}
+	finalKRecipients["localhost:8027"] = &expectedRecipient{true, d7024e.NewKademliaID("0FFFFFFFF000000000000000000000000000001B")}
+	finalKRecipients["localhost:8028"] = &expectedRecipient{true, d7024e.NewKademliaID("0FFFFFFFF000000000000000000000000000001C")}
+	finalKRecipients["localhost:8029"] = &expectedRecipient{true, d7024e.NewKademliaID("0FFFFFFFF000000000000000000000000000001D")}
+
 	net := testNetwork{}
 	net.CheckList = cList
 	kadem.SetNetworkHandler(&net)
 
 	result, _, _ := kadem.lookupProcedure(procedureContacts, target.ID)
-	assertEqual(t, expectedResult, result)
+	if len(result) == len(expectedResult){
+		for i, c := range result {
+			assertEqual(t, c.ID.String(), expectedResult[i].ID.String())
+		}
+	} else {
+		panic(fmt.Sprintf("Unexpected amount of contacts: %v\n", len(result)))
+	}
 }
 
 func TestFindNodeTimeOutRecovery(t *testing.T) {
@@ -378,7 +405,7 @@ func TestFindNodeTimeOutRecovery(t *testing.T) {
 			nodesFoundM, _ := json.Marshal(rpc.ClosestNodes{nodesFound})
 			firstResponse := rpc.Message{rpc.CLOSEST_NODES, msg.RpcId, *firstAlphaRecipients[addr].recipientId, nodesFoundM}
 			byteMsg, _ := json.Marshal(firstResponse)
-			time.Sleep(7*time.Second)
+			time.Sleep(1*time.Second)
 			kadem.HandleIncomingRPC(byteMsg, addr)
 
 		},
@@ -389,7 +416,13 @@ func TestFindNodeTimeOutRecovery(t *testing.T) {
 	kadem.SetNetworkHandler(&net)
 
 	result, _, _ := kadem.lookupProcedure(procedureContacts, target.ID)
-	assertEqual(t, expectedResult, result)
+	if len(result) == len(expectedResult){
+		for i, c := range result {
+			assertEqual(t, c.ID.String(), expectedResult[i].ID.String())
+		}
+	} else {
+		t.Fail()
+	}
 }
 
 func TestFindValue(t *testing.T) {

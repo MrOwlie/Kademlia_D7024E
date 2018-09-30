@@ -96,13 +96,9 @@ func (kademlia *kademlia) handleFindValue(rpc_id d7024e.KademliaID, find_node rp
 	var response []byte
 	var err error
 
-<<<<<<< HEAD
-	if metadata.HasFile(hash){
-=======
 	fmt.Println("started looking for file")
 	if metadata.HasFile(hash) {
 		fmt.Println("found file")
->>>>>>> 2b12a8083ef00f848ec0e2e992546bbd6b849968
 		response, err = json.Marshal(rpc.Message{rpc.HAS_VALUE, rpc_id, *rt.Me.ID, []byte{byte(0)}})
 
 		if err != nil {
