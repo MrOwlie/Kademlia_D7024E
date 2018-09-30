@@ -168,6 +168,10 @@ func TestBucketReExploration(t *testing.T) {
 
 }
 
+func TestStoreFile(t *testing.T) {
+
+}
+
 func TestAddContact(t *testing.T) {
 	rt := routingTable.GetInstance()
 	kadem := GetInstance()
