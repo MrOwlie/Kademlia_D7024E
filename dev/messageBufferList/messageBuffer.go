@@ -7,7 +7,7 @@ import (
 	"../rpc"
 )
 
-const messageBufferTimeout = 5
+const messageBufferTimeout = 30
 
 type messageBuffer struct {
 	RPCID          *d7024e.KademliaID
@@ -38,7 +38,7 @@ func (mb *messageBuffer) AppendMessage(message *rpc.Message) {
 
 func (mb *messageBuffer) hasExpired() bool {
 	elapsed := time.Since(mb.latestResponse)
-	if elapsed.Minutes() > messageBufferTimeout {
+	if elapsed.Seconds() > messageBufferTimeout {
 		return true
 	}
 	return false

@@ -2,7 +2,6 @@ package messageBufferList
 
 import (
 	"sync"
-
 	"../d7024e"
 	"../rpc"
 )

@@ -19,7 +19,7 @@ services:
     tty: true
     deploy:
       mode: replicated
-      replicas: 20
+      replicas: 99
     working_dir: /kademlia/bin
     command: ./initialize Main 10000 10000
     depends_on:

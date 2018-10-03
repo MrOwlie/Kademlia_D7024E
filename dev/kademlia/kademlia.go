@@ -127,7 +127,6 @@ func (kademlia *kademlia) lookupProcedure(procedureType int, target *d7024e.Kade
 				startIndex = len(chans) - alpha
 			}
 			for {
-				fmt.Println("started new waittime")
 				timeWaited := time.Since(startTime)
 				allowedTimeouts := int(timeWaited.Seconds()) / incrementalLimit
 
@@ -136,11 +135,9 @@ func (kademlia *kademlia) lookupProcedure(procedureType int, target *d7024e.Kade
 					case x, ok := <-*chans[i]:
 						if ok {
 							if x.returnType == returnContacts {
-								fmt.Println("got back contacts")
 								for i, _ := range x.contacts {
 									x.contacts[i].CalcDistance(target)
 								}
-								fmt.Println("appending ", len(x.contacts))
 								candids.Append(x.contacts)
 							} else if x.returnType == returnHasValue {
 								x.contacts[0].CalcDistance(target)
@@ -183,6 +180,7 @@ func (kademlia *kademlia) lookupProcedure(procedureType int, target *d7024e.Kade
 						if x.returnType == returnContacts {
 							for i, _ := range x.contacts {
 								x.contacts[i].CalcDistance(target)
+								fmt.Println("got response")
 							}
 							candids.Append(x.contacts)
 						} else if x.returnType == returnHasValue {
@@ -193,6 +191,7 @@ func (kademlia *kademlia) lookupProcedure(procedureType int, target *d7024e.Kade
 							}
 						} else if x.returnType == returnTimedOut {
 							candids.RemoveContact(x.contacts[0].ID)
+							fmt.Println("time out")
 						}
 					}
 					chans = append(chans[:i], chans[i+1:]...)
@@ -234,13 +233,12 @@ func (kademlia *kademlia) lookupProcedure(procedureType int, target *d7024e.Kade
 				if _, value := queriedAddresses[contact.Address]; !value {
 					ch := make(chan kademliaMessage)
 					chans = append(chans, &ch)
-					fmt.Println("quering ", contact.ID.String())
+					//fmt.Println("quering ", contact.ID.String())
 					go kademlia.lookupSubProcedure(contact, target, procedureType, ch)
 				}
 			}
 
 			//wait for responses or time-outs for all open queries
-			fmt.Println("waiting for response from all")
 			for {
 				if len(chans) == 0 {
 					break
@@ -251,7 +249,7 @@ func (kademlia *kademlia) lookupProcedure(procedureType int, target *d7024e.Kade
 					case x, ok := <-*chans[i]:
 						if ok {
 							if x.returnType == returnContacts {
-								fmt.Println("got response, ", i, " remaining")
+								//fmt.Println("got response, ", i, " remaining")
 								for i, _ := range x.contacts {
 									x.contacts[i].CalcDistance(target)
 								}
@@ -262,6 +260,7 @@ func (kademlia *kademlia) lookupProcedure(procedureType int, target *d7024e.Kade
 								if !fileWasFound {
 									fileWasFound = true
 								}
+								fmt.Println("file was found")
 							} else if x.returnType == returnTimedOut {
 								candids.RemoveContact(x.contacts[0].ID)
 							}
@@ -287,7 +286,6 @@ func (kademlia *kademlia) lookupProcedure(procedureType int, target *d7024e.Kade
 		}
 
 	}
-	fmt.Println("returning")
 	candids.RemoveContact(rTable.Me.ID)
 	candids.Sort()
 	distinctContacts := candids.GetDistinctContacts(valueK)
@@ -311,30 +309,28 @@ func (kademlia *kademlia) lookupSubProcedure(target d7024e.Contact, toFind *d702
 
 	//wait until a response is retrieved
 	message := <-mBuffer.MessageChannel
-
+	mBufferList.DeleteMessageBuffer(rpcID)
 	//Return different flags and payload depending on file is found or contacts is returned
 	if message.RpcType == rpc.CLOSEST_NODES {
 		var contacts rpc.ClosestNodes
 		json.Unmarshal(message.RpcData, &contacts)
 		retMessage := kademliaMessage{returnContacts, contacts.Closest}
-		fmt.Println("returning contacts ", len(contacts.Closest))
 		ch <- retMessage
 		close(ch)
 	} else if message.RpcType == rpc.HAS_VALUE {
 		//return target so main routine knows which contact has the file
 		contacts := []d7024e.Contact{target}
 		retMessage := kademliaMessage{returnHasValue, contacts}
-		fmt.Println("returning hasfile")
 		ch <- retMessage
 		close(ch)
 	} else {
 		//return target so main routine knows which contact has timed out
 		contacts := []d7024e.Contact{target}
 		retMessage := kademliaMessage{returnTimedOut, contacts}
-		fmt.Println("returning timed out")
 		ch <- retMessage
 		close(ch)
 	}
+
 }
 
 func (kademlia *kademlia) LookupContact(target *d7024e.KademliaID) (closest []d7024e.Contact) {
@@ -364,7 +360,6 @@ func (kademlia *kademlia) StoreFile(filePath string) {
 		fmt.Println(err)
 		return
 	}
-	fmt.Println("opened file ", filePath)
 
 	h := sha1.New()
 	_, err = io.Copy(h, file)
@@ -374,7 +369,6 @@ func (kademlia *kademlia) StoreFile(filePath string) {
 	}
 	file.Seek(0, 0)
 
-	fmt.Println("hashed file")
 
 	hash := h.Sum(nil)
 	newFileName := hex.EncodeToString(hash)
@@ -394,10 +388,8 @@ func (kademlia *kademlia) StoreFile(filePath string) {
 		return
 	}
 
-	fmt.Println("copied file")
 
 	kademliaHash := d7024e.NewKademliaID(newFileName)
-	fmt.Println("metadata")
 	metadata.GetInstance().AddFile(newPath, newFileName, true, calcTimeToLive(kademliaHash))
 
 	fmt.Println("getting closest nodes")
@@ -426,6 +418,7 @@ func (kademlia *kademlia) Join(ip string, port int) bool {
 
 		//wait until a response is
 		message := <-mBuffer.MessageChannel
+		mBufferList.DeleteMessageBuffer(rpcID)
 
 		if message.RpcType == rpc.CLOSEST_NODES {
 
@@ -463,17 +456,15 @@ func (kademlia *kademlia) addContact(contact *d7024e.Contact) {
 
 				kademlia.sendPingMessage(iPingContact, rpcID)
 
-				fmt.Println("sent ping message from bucket")
 
 				message := <-mBuffer.MessageChannel
-				fmt.Println("ping executed")
+				mBufferList.DeleteMessageBuffer(rpcID)
+
 
 				if message.RpcType == rpc.PONG {
-					fmt.Println("ping responded successfully, node alive.")
 					rt.AddContact(*iPingContact)
 					return
 				} else {
-					fmt.Println("ping without response, node dead.")
 					iPingContact, iInserted = rt.ReplaceLastSeenNode(*iPingContact, *iContact)
 					if iInserted {
 

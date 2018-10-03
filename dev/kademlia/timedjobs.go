@@ -3,6 +3,7 @@ package kademlia
 import (
 	"os"
 	"time"
+	"fmt"
 
 	"../d7024e"
 	"../messageBufferList"
@@ -67,7 +68,7 @@ func scheduleFileRepublish() {
 func (kademlia *kademlia) republishFiles() {
 	metaData := metadata.GetInstance()
 	fileHashes := metaData.FilesToRepublish(republishInterval)
-
+	fmt.Println("Repub")
 	for _, hash := range fileHashes {
 		kademliaHash := d7024e.NewKademliaID(hash)
 		closest := kademlia.LookupContact(kademliaHash)
@@ -87,7 +88,6 @@ func scheduleCacheExpiredFileDeletion() {
 			select {
 			case <-ticker.C:
 				filePaths := metaData.FilesToDelete()
-
 				for i := 0; i < len(filePaths); i++ {
 					os.Remove(filePaths[i])
 				}

@@ -9,6 +9,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"time"
 
 	"./kademlia"
 
@@ -33,12 +34,16 @@ func main() {
 		ownPort = args[2]
 
 		if !validIP4(ip) && ip != "localhost" {
-			res, err := net.LookupHost(ip)
-			if err != nil {
-				fmt.Println(ip, " is not a valid ip-address or host-name, exiting.")
-				return
+			for{
+				res, err := net.LookupHost(ip)
+				if err != nil {
+					fmt.Println(ip, " is not a valid ip-address or host-name, exiting.")
+					time.Sleep(5*time.Second)
+				} else {
+					ip = res[0]
+					break;
+				}		
 			}
-			ip = res[0]
 		}
 		if !validPort(port) {
 			fmt.Printf("%q is not a valid port number, exiting.", port)
@@ -94,7 +99,7 @@ func main() {
 	var action, param1 string
 	for {
 
-		fmt.Println("\n\nPlease enter a command, type '?' for help:")
+		fmt.Println("\n\nPlease enter a command, type '?' for help :D :")
 		fmt.Scanln(&action, &param1)
 
 		switch {
@@ -114,7 +119,11 @@ func main() {
 			kadem.StoreFile(path)
 			//}
 		case action == "fetch":
-			kadem.LookupData(param1)
+			_, closest, _ := kadem.LookupData(param1)
+			fmt.Println("Nodes found :", len(closest))
+			for _, c := range closest {
+				fmt.Println(c.ID)
+			}
 		default:
 			fmt.Println("The command entered is invalid, try again.")
 		}

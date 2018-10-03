@@ -1,7 +1,6 @@
 package kademlia
 
 import (
-	"encoding/hex"
 	"encoding/json"
 	"fmt"
 
@@ -36,7 +35,6 @@ func (kademlia *kademlia) HandleIncomingRPC(data []byte, addr string) {
 		kademlia.handlePing(message.RpcId, addr)
 
 	case rpc.FIND_VALUE:
-		fmt.Println("got a find value from ", message.SenderId.String())
 		var find_node rpc.FindNode
 		json.Unmarshal(message.RpcData, &find_node)
 		kademlia.handleFindValue(message.RpcId, find_node, addr)
@@ -74,6 +72,7 @@ func (kademlia *kademlia) handleFindNode(rpc_id d7024e.KademliaID, find_node rpc
 	}
 
 	fmt.Println("sending closest contacts ", len(closest_nodes.Closest))
+
 	kademlia.network.SendMessage(addr, &response)
 }
 
@@ -92,11 +91,11 @@ func (kademlia *kademlia) handleFindValue(rpc_id d7024e.KademliaID, find_node rp
 	rt := routingTable.GetInstance()
 	metadata := metadata.GetInstance()
 
-	hash := hex.EncodeToString(find_node.NodeId[:])
+	hash := find_node.NodeId.String()
 	var response []byte
 	var err error
 
-	fmt.Println("started looking for file")
+	fmt.Println(hash)
 	if metadata.HasFile(hash) {
 		fmt.Println("found file")
 		response, err = json.Marshal(rpc.Message{rpc.HAS_VALUE, rpc_id, *rt.Me.ID, []byte{byte(0)}})
@@ -137,7 +136,6 @@ func (kademlia *kademlia) handleStore(store_file *rpc.StoreFile, addr string) {
 		err := kademlia.network.FetchFile(hostURL, filePath)
 		if err == nil {
 			metadata.AddFile(filePath, hash, false, calcTimeToLive(&store_file.FileHash))
-			fmt.Println("successfully stored a new file!")
 		} else {
 			fmt.Println(err, " (", hostURL, ")")
 		}
