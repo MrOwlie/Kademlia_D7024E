@@ -29,9 +29,10 @@ type testNetworkFetchControl struct {
 }
 
 type testNetwork struct {
-	CheckList []testNetworkControl
+	CheckList      []testNetworkControl
 	CheckListFetch []testNetworkFetchControl
-	sendMutex sync.Mutex
+	sendMutex      sync.Mutex
+	fetchMutex     sync.Mutex
 }
 
 func (net *testNetwork) SendMessage(addr string, data *[]byte) {
@@ -53,14 +54,25 @@ func (net *testNetwork) SendMessage(addr string, data *[]byte) {
 
 }
 
-func (net *testNetwork) FetchFile(a string, b string) error {
+func (net *testNetwork) FetchFile(url string, filePath string) error {
+
+	net.fetchMutex.Lock()
+	defer net.fetchMutex.Unlock()
+	fmt.Printf("Fetching file from :%v\n", url)
+	checkData := net.CheckListFetch[0]
+	if len(net.CheckListFetch) > 1 {
+		net.CheckListFetch = net.CheckListFetch[1:]
+	} else {
+		net.CheckListFetch = nil
+	}
+
+	go checkData.CheckFunction(url, filePath)
+
 	return nil
 }
 
-
-
 type expectedRecipient struct {
-	valid bool
+	valid       bool
 	recipientId *d7024e.KademliaID
 }
 
@@ -68,7 +80,7 @@ var firstAlphaRecipients map[string]*expectedRecipient = make(map[string]*expect
 var finalKRecipients map[string]*expectedRecipient = make(map[string]*expectedRecipient)
 
 //Base test for LookupContact
-func lookUpTestInitalSetup(target d7024e.Contact, t *testing.T) *[]testNetworkControl{	
+func lookUpTestInitalSetup(target d7024e.Contact, t *testing.T) *[]testNetworkControl {
 	kadem := GetInstance()
 	startingContacts := []d7024e.Contact{
 		d7024e.NewContact(d7024e.NewKademliaID("FFFFFFFFF0000000000000000000000000000001"), "localhost:8001"),
@@ -281,14 +293,14 @@ func TestFindNode(t *testing.T) {
 	kadem.SetNetworkHandler(&net)
 
 	result, _, _ := kadem.lookupProcedure(procedureContacts, target.ID)
-	if len(result) == len(expectedResult){
+	if len(result) == len(expectedResult) {
 		for i, c := range result {
 			assertEqual(t, c.ID.String(), expectedResult[i].ID.String())
 		}
 	} else {
 		t.Fail()
 	}
-	
+
 }
 
 func TestFindNodeTimeOut(t *testing.T) {
@@ -319,8 +331,8 @@ func TestFindNodeTimeOut(t *testing.T) {
 	kadem := GetInstance()
 
 	cList := *lookUpTestInitalSetup(target, t)
-	cList[0] = testNetworkControl{ func(msg rpc.Message, addr string) {} }
-	
+	cList[0] = testNetworkControl{func(msg rpc.Message, addr string) {}}
+
 	finalKRecipients["localhost:8007"].valid = false
 	finalKRecipients["localhost:8008"].valid = false
 	finalKRecipients["localhost:8009"].valid = false
@@ -340,7 +352,7 @@ func TestFindNodeTimeOut(t *testing.T) {
 	kadem.SetNetworkHandler(&net)
 
 	result, _, _ := kadem.lookupProcedure(procedureContacts, target.ID)
-	if len(result) == len(expectedResult){
+	if len(result) == len(expectedResult) {
 		for i, c := range result {
 			assertEqual(t, c.ID.String(), expectedResult[i].ID.String())
 		}
@@ -380,7 +392,6 @@ func TestFindNodeTimeOutRecovery(t *testing.T) {
 	cList[0] = testNetworkControl{ //First reponse
 		func(msg rpc.Message, addr string) {
 
-			
 			if recipient, ok := firstAlphaRecipients[addr]; ok && recipient.valid {
 				firstAlphaRecipients[addr].valid = false
 			} else {
@@ -405,7 +416,7 @@ func TestFindNodeTimeOutRecovery(t *testing.T) {
 			nodesFoundM, _ := json.Marshal(rpc.ClosestNodes{nodesFound})
 			firstResponse := rpc.Message{rpc.CLOSEST_NODES, msg.RpcId, *firstAlphaRecipients[addr].recipientId, nodesFoundM}
 			byteMsg, _ := json.Marshal(firstResponse)
-			time.Sleep(1*time.Second)
+			time.Sleep(1 * time.Second)
 			kadem.HandleIncomingRPC(byteMsg, addr)
 
 		},
@@ -416,7 +427,7 @@ func TestFindNodeTimeOutRecovery(t *testing.T) {
 	kadem.SetNetworkHandler(&net)
 
 	result, _, _ := kadem.lookupProcedure(procedureContacts, target.ID)
-	if len(result) == len(expectedResult){
+	if len(result) == len(expectedResult) {
 		for i, c := range result {
 			assertEqual(t, c.ID.String(), expectedResult[i].ID.String())
 		}
@@ -426,7 +437,7 @@ func TestFindNodeTimeOutRecovery(t *testing.T) {
 }
 
 func TestFindValue(t *testing.T) {
-	
+
 	kadem := GetInstance()
 	target := d7024e.NewContact(d7024e.NewKademliaID("FFFFFFFFF0000000000000000000000000000000"), "localhost:8030")
 
@@ -440,7 +451,6 @@ func TestFindValue(t *testing.T) {
 	firstAlphaRecipients["localhost:8002"] = &expectedRecipient{true, d7024e.NewKademliaID("FFFFFFFFF0000000000000000000000000000002")}
 	firstAlphaRecipients["localhost:8003"] = &expectedRecipient{true, d7024e.NewKademliaID("FFFFFFFFF0000000000000000000000000000003")}
 
-
 	storeRecipient := expectedRecipient{true, d7024e.NewKademliaID("FFFFFFFFF0000000000000000000000000000002")}
 
 	fetchRecipient := "localhost:8001/storage/FFFFFFFFF0000000000000000000000000000000"
@@ -449,7 +459,6 @@ func TestFindValue(t *testing.T) {
 		testNetworkControl{ //First reponse
 			func(msg rpc.Message, addr string) {
 
-				
 				if recipient, ok := firstAlphaRecipients[addr]; ok && recipient.valid {
 					recipient.valid = false
 				} else {
@@ -458,7 +467,6 @@ func TestFindValue(t *testing.T) {
 
 				expectedType := rpc.FIND_VALUE
 				assertEqual(t, expectedType, msg.RpcType)
-
 
 				firstResponse := rpc.Message{rpc.HAS_VALUE, msg.RpcId, *firstAlphaRecipients[addr].recipientId, []byte{byte(0)}}
 				byteMsg, _ := json.Marshal(firstResponse)
@@ -470,7 +478,6 @@ func TestFindValue(t *testing.T) {
 		testNetworkControl{ //Second reponse
 			func(msg rpc.Message, addr string) {
 
-				
 				if recipient, ok := firstAlphaRecipients[addr]; ok && recipient.valid {
 					recipient.valid = false
 				} else {
@@ -479,7 +486,6 @@ func TestFindValue(t *testing.T) {
 
 				expectedType := rpc.FIND_VALUE
 				assertEqual(t, expectedType, msg.RpcType)
-
 
 				firstResponse := rpc.Message{rpc.HAS_VALUE, msg.RpcId, *firstAlphaRecipients[addr].recipientId, []byte{byte(0)}}
 				byteMsg, _ := json.Marshal(firstResponse)
@@ -490,7 +496,7 @@ func TestFindValue(t *testing.T) {
 
 		testNetworkControl{ //Third reponse
 			func(msg rpc.Message, addr string) {
-			
+
 				if recipient, ok := firstAlphaRecipients[addr]; ok && recipient.valid {
 					recipient.valid = false
 				} else {
@@ -518,8 +524,8 @@ func TestFindValue(t *testing.T) {
 		},
 		testNetworkControl{ //Cache in node
 			func(msg rpc.Message, addr string) {
-			
-				if !msg.SenderId.Equals(storeRecipient.recipientId){
+
+				if !msg.SenderId.Equals(storeRecipient.recipientId) {
 					t.Fail()
 				}
 
@@ -529,10 +535,10 @@ func TestFindValue(t *testing.T) {
 		},
 	}
 
-	fetchList := []testNetworkFetchControl{testNetworkFetchControl {func(url string, path string){
-				assertEqual(t, url, fetchRecipient)
-			},
-		},
+	fetchList := []testNetworkFetchControl{testNetworkFetchControl{func(url string, path string) {
+		assertEqual(t, url, fetchRecipient)
+	},
+	},
 	}
 
 	rt := routingTable.GetInstance()
@@ -547,8 +553,8 @@ func TestFindValue(t *testing.T) {
 	kadem.SetNetworkHandler(&net)
 
 	_, _, found := kadem.LookupData("FFFFFFFFF0000000000000000000000000000000")
-	
-	if !found{
+
+	if !found {
 		t.Fail()
 	}
 }
@@ -669,7 +675,174 @@ func TestBucketReExploration(t *testing.T) {
 
 }
 
-func TestStoreFile(t *testing.T) {
+// func TestStoreFile(t *testing.T) {
+// 	kadem := GetInstance()
+// 	rt := routingTable.GetInstance()
+// 	rt.Me.ID = d7024e.NewKademliaID("0000000000000000000000000000000000000000")
+// 	rt.AddContact(d7024e.NewContact(d7024e.NewKademliaID("0000000000000000000000000000000000000001"), "localhost:8001"))
+// 	//rt.AddContact(d7024e.NewContact(d7024e.NewKademliaID("0000000000000000000000000000000000000002"), "localhost:8002"))
+// 	//rt.AddContact(d7024e.NewContact(d7024e.NewKademliaID("0000000000000000000000000000000000000003"), "localhost:8003"))
+// 	//rt.AddContact(d7024e.NewContact(d7024e.NewKademliaID("0000000000000000000000000000000000000004"), "localhost:8004"))
+// 	//rt.AddContact(d7024e.NewContact(d7024e.NewKademliaID("0000000000000000000000000000000000000005"), "localhost:8005"))
+// 	//rt.AddContact(d7024e.NewContact(d7024e.NewKademliaID("0000000000000000000000000000000000000006"), "localhost:8006"))
+// 	//rt.AddContact(d7024e.NewContact(d7024e.NewKademliaID("0000000000000000000000000000000000000007"), "localhost:8007"))
+// 	//rt.AddContact(d7024e.NewContact(d7024e.NewKademliaID("0000000000000000000000000000000000000008"), "localhost:8008"))
+// 	//rt.AddContact(d7024e.NewContact(d7024e.NewKademliaID("0000000000000000000000000000000000000009"), "localhost:8009"))
+
+// 	downloadsPath, err := filepath.Abs("../downloads")
+// 	storagePath, err := filepath.Abs("../storage")
+
+// 	testContent := []byte("test")
+
+// 	file, err := os.Create(downloadsPath + filepath.Clean("/test"))
+// 	if err != nil {
+// 		fmt.Println("TestStoreFile failed at creating test file in downloads.")
+// 		fmt.Println(err)
+// 	}
+
+// 	file.Write(testContent)
+
+// 	h := sha1.New()
+
+// 	_, err = io.Copy(h, file)
+// 	if err != nil {
+// 		fmt.Println("TestStoreFile failed at copying test file in downloads.")
+// 		fmt.Println(err)
+// 	}
+// 	file.Seek(0, 0)
+// 	hash := h.Sum(nil)
+
+// 	var wg sync.WaitGroup
+// 	wg.Add(1)
+
+// 	var cList []testNetworkControl
+// 	cList = append(cList, testNetworkControl{
+// 		func(sentMessage rpc.Message, addr string) {
+// 			if sentMessage.RpcType != rpc.FIND_NODE {
+// 				fmt.Println("TYPE: " + sentMessage.RpcType)
+// 				panic("TestStoreFile failed because sent RPC type is not STORE.")
+// 			} else {
+// 				returnMessage := rpc.Message{rpc.CLOSEST_NODES, sentMessage.RpcId, *d7024e.NewKademliaID("0000000000000000000000000000000000000000"), helperReturnMarshal(rpc.ClosestNodes{
+// 					[]d7024e.Contact{
+// 						d7024e.NewContact(d7024e.NewKademliaID("0000000000000000000000000000000000000001"), "localhost:8001"),
+// 						//d7024e.NewContact(d7024e.NewKademliaID("0000000000000000000000000000000000000002"), "localhost:8002"),
+// 						//d7024e.NewContact(d7024e.NewKademliaID("0000000000000000000000000000000000000003"), "localhost:8003"),
+// 						//d7024e.NewContact(d7024e.NewKademliaID("0000000000000000000000000000000000000004"), "localhost:8004"),
+// 						//d7024e.NewContact(d7024e.NewKademliaID("0000000000000000000000000000000000000005"), "localhost:8005"),
+// 						//d7024e.NewContact(d7024e.NewKademliaID("0000000000000000000000000000000000000006"), "localhost:8006"),
+// 						//d7024e.NewContact(d7024e.NewKademliaID("0000000000000000000000000000000000000007"), "localhost:8007"),
+// 						//d7024e.NewContact(d7024e.NewKademliaID("0000000000000000000000000000000000000008"), "localhost:8008"),
+// 					},
+// 				}),
+// 				}
+// 				d, _ := json.Marshal(returnMessage)
+
+// 				GetInstance().HandleIncomingRPC(d, addr)
+// 				wg.Done()
+// 			}
+
+// 		},
+// 	})
+
+// 	net := testNetwork{}
+// 	net.CheckList = cList
+// 	kadem.SetNetworkHandler(&net)
+// 	kadem.StoreFile(downloadsPath + filepath.Clean("/test"))
+// 	wg.Wait()
+
+// 	_, errs := ioutil.ReadFile(storagePath + filepath.Clean("/"+hex.EncodeToString(hash)))
+// 	if errs != nil {
+// 		fmt.Println("TestStoreFile failed at reading stored file from stored")
+// 		fmt.Println(errs)
+// 	} else {
+// 		fmt.Println("TestStoreFile was successful")
+// 	}
+
+// }
+
+func TestFetchFileRecieve(t *testing.T) {
+	kadem := GetInstance()
+	rt := routingTable.GetInstance()
+	rt.Me.ID = d7024e.NewKademliaID("0000000000000000000000000000000000000000")
+
+	net := testNetwork{}
+	kadem.SetNetworkHandler(&net)
+	rpcID1 := d7024e.NewRandomKademliaID()
+	rpcID2 := d7024e.NewRandomKademliaID()
+
+	fileHash1 := d7024e.NewRandomKademliaID()
+	fileHash2 := d7024e.NewRandomKademliaID()
+
+	checkdata := make(map[string]bool)
+
+	senderIP := "localhost:8001"
+	otherHostIP := "localhost:8002"
+
+	checkdata["sender"] = false
+	checkdata["ip"] = false
+
+	var wg sync.WaitGroup
+
+	wg.Add(2)
+
+	var cList []testNetworkFetchControl
+	cList = append(cList, testNetworkFetchControl{
+		func(addr string, filePath string) {
+			if addr == senderIP+"/storage/"+fileHash1.String() {
+				checkdata["sender"] = true
+			} else if addr == otherHostIP+"/storage/"+fileHash1.String() {
+				checkdata["ip"] = true
+			} else {
+				panic("IP NOT RECOGNIZED")
+			}
+			wg.Done()
+		},
+	})
+	cList = append(cList, testNetworkFetchControl{
+		func(addr string, filePath string) {
+			if addr == senderIP+"/storage/"+fileHash2.String() {
+				checkdata["sender"] = true
+			} else if addr == otherHostIP+"/storage/"+fileHash2.String() {
+				checkdata["ip"] = true
+			} else {
+				panic("IP NOT RECOGNIZED")
+			}
+			wg.Done()
+		},
+	})
+
+	net.CheckListFetch = cList
+
+	senderStoreData := rpc.StoreFile{*fileHash1, "sender"}
+	senderStoreByteData, err := json.Marshal(senderStoreData)
+	if err != nil {
+		panic("MARSHALING ERROR")
+	}
+	senderStoreMessage := rpc.Message{rpc.STORE, *rpcID1, *d7024e.NewKademliaID("0000000000000000000000000000000000000001"), senderStoreByteData}
+	senderStoreByteMessage, err := json.Marshal(senderStoreMessage)
+	if err != nil {
+		panic("MARSHALING ERROR")
+	}
+	otherHostStoreData := rpc.StoreFile{*fileHash2, otherHostIP}
+	otherHostStoreByteData, err := json.Marshal(otherHostStoreData)
+	if err != nil {
+		panic("MARSHALING ERROR")
+	}
+	otherHostStoreMessage := rpc.Message{rpc.STORE, *rpcID2, *d7024e.NewKademliaID("0000000000000000000000000000000000000002"), otherHostStoreByteData}
+	otherHostStoreByteMessage, err := json.Marshal(otherHostStoreMessage)
+	if err != nil {
+		panic("MARSHALING ERROR")
+	}
+	kadem.HandleIncomingRPC(senderStoreByteMessage, senderIP)
+	kadem.HandleIncomingRPC(otherHostStoreByteMessage, otherHostIP)
+
+	wg.Wait()
+
+	if checkdata["sender"] == true && checkdata["ip"] == true {
+		println("TestFetchFileRecieve successful")
+	} else {
+		panic("TestFetchFileRecieve failed")
+	}
 
 }
 
