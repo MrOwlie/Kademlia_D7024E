@@ -102,12 +102,3 @@ func (bucket *Bucket) NeedsRefresh() bool {
 	elapsed := time.Since(bucket.latestLookup)
 	return (elapsed.Minutes() > timeForRefresh)
 }
-
-func (bucket *Bucket) IsFull() bool {
-	if bucket.List.Len() < bucketSize {
-		return false
-	}
-
-	return true
-
-}
