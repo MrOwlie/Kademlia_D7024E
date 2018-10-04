@@ -45,7 +45,6 @@ func scheduleIdleBucketReExploration() {
 func (kademlia *kademlia) IdleBucketReExploration() {
 	rTable := routingTable.GetInstance()
 	var kademliaIDs []*d7024e.KademliaID = rTable.GetRefreshIDs()
-
 	for i := 0; i < len(kademliaIDs); i++ {
 		go kademlia.lookupProcedure(procedureContacts, kademliaIDs[i])
 	}

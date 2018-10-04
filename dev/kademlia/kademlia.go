@@ -372,7 +372,7 @@ func (kademlia *kademlia) StoreFile(filePath string) {
 
 	hash := h.Sum(nil)
 	newFileName := hex.EncodeToString(hash)
-	newPath := storagePath + "/" + newFileName
+	newPath := storagePath + filepath.Clean("/") + newFileName
 	destination, deserr := os.Create(newPath)
 	defer destination.Close()
 	if deserr != nil {
