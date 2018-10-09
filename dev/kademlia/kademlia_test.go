@@ -10,9 +10,9 @@ import (
 
 	"../d7024e"
 	"../messageBufferList"
+	"../metadata"
 	"../routingTable"
 	"../rpc"
-	"../metadata"
 )
 
 var doNotCareID *d7024e.KademliaID = d7024e.NewKademliaID("F000000000000000000000000000000000000000")
@@ -81,9 +81,8 @@ var firstAlphaRecipients map[string]*expectedRecipient = make(map[string]*expect
 var finalKRecipients map[string]*expectedRecipient = make(map[string]*expectedRecipient)
 
 //Base test for LookupContact
-func lookUpTestInitalSetup(target d7024e.Contact, t *testing.T) *[]testNetworkControl {
-	kadem := GetInstance()
-	rt := routingTable.GetInstance()
+func lookUpTestInitalSetup(target d7024e.Contact, t *testing.T, kadem *kademlia, rt *routingTable.RoutingTable) *[]testNetworkControl {
+
 	for i := 0; i < d7024e.IDLength*8; i++ {
 		rt.Buckets[i] = d7024e.NewBucket()
 	}
@@ -291,10 +290,12 @@ func TestFindNode(t *testing.T) {
 		d7024e.NewContact(d7024e.NewKademliaID("FFFFFFFFF0000000000000000000000000000014"), "localhost:8020"),
 	}
 
-	kadem := GetInstance()
-
+	RTable := routingTable.NewRoutingTable()
+	MBList := &messageBufferList.MessageBufferList{}
+	MData := metadata.NewFileMetaData()
+	var kadem = NewKademliaObject(RTable, MBList, MData)
 	net := testNetwork{}
-	net.CheckList = *lookUpTestInitalSetup(target, t)
+	net.CheckList = *lookUpTestInitalSetup(target, t, kadem, RTable)
 	kadem.SetNetworkHandler(&net)
 
 	result, _, _ := kadem.lookupProcedure(procedureContacts, target.ID)
@@ -333,9 +334,12 @@ func TestFindNodeTimeOut(t *testing.T) {
 		d7024e.NewContact(d7024e.NewKademliaID("0FFFFFFFF000000000000000000000000000001B"), "localhost:8027"),
 	}
 
-	kadem := GetInstance()
+	RTable := routingTable.NewRoutingTable()
+	MBList := &messageBufferList.MessageBufferList{}
+	MData := metadata.NewFileMetaData()
+	var kadem = NewKademliaObject(RTable, MBList, MData)
 
-	cList := *lookUpTestInitalSetup(target, t)
+	cList := *lookUpTestInitalSetup(target, t, kadem, RTable)
 	cList[0] = testNetworkControl{func(msg rpc.Message, addr string) {}}
 
 	finalKRecipients["localhost:8007"].valid = false
@@ -391,11 +395,14 @@ func TestFindNodeTimeOutRecovery(t *testing.T) {
 		d7024e.NewContact(d7024e.NewKademliaID("FFFFFFFFF0000000000000000000000000000014"), "localhost:8020"),
 	}
 
-	kadem := GetInstance()
+	RTable := routingTable.NewRoutingTable()
+	MBList := &messageBufferList.MessageBufferList{}
+	MData := metadata.NewFileMetaData()
+	var kadem = NewKademliaObject(RTable, MBList, MData)
 
-	cList := *lookUpTestInitalSetup(target, t)
+	cList := *lookUpTestInitalSetup(target, t, kadem, RTable)
 
-	cList [0] = testNetworkControl{ //Third reponse
+	cList[0] = testNetworkControl{ //Third reponse
 		func(msg rpc.Message, addr string) {
 
 			if recipient, ok := firstAlphaRecipients[addr]; ok && recipient.valid {
@@ -428,7 +435,6 @@ func TestFindNodeTimeOutRecovery(t *testing.T) {
 		},
 	}
 
-
 	cList[22] = testNetworkControl{
 		func(msg rpc.Message, addr string) {
 
@@ -450,7 +456,7 @@ func TestFindNodeTimeOutRecovery(t *testing.T) {
 			nodesFoundM, _ := json.Marshal(rpc.ClosestNodes{nodesFound})
 			response := rpc.Message{rpc.CLOSEST_NODES, msg.RpcId, *finalKRecipients[addr].recipientId, nodesFoundM}
 			byteMsg, _ := json.Marshal(response)
-			time.Sleep(7*time.Second)
+			time.Sleep(7 * time.Second)
 			kadem.HandleIncomingRPC(byteMsg, addr)
 		},
 	}
@@ -485,7 +491,11 @@ func TestFindNodeTimeOutRecovery(t *testing.T) {
 
 func TestFindValue(t *testing.T) {
 
-	kadem := GetInstance()
+	RTable := routingTable.NewRoutingTable()
+	MBList := &messageBufferList.MessageBufferList{}
+	MData := metadata.NewFileMetaData()
+	var kadem = NewKademliaObject(RTable, MBList, MData)
+
 	target := d7024e.NewContact(d7024e.NewKademliaID("FFFFFFFFF0000000000000000000000000000000"), "localhost:8030")
 
 	startingContacts := []d7024e.Contact{
@@ -498,8 +508,7 @@ func TestFindValue(t *testing.T) {
 	firstAlphaRecipients["localhost:8002"] = &expectedRecipient{true, d7024e.NewKademliaID("FFFFFFFFF0000000000000000000000000000002")}
 	firstAlphaRecipients["localhost:8003"] = &expectedRecipient{true, d7024e.NewKademliaID("FFFFFFFFF0000000000000000000000000000003")}
 
-
-	var storeRecipient string 
+	var storeRecipient string
 
 	fetchURL := "localhost:8001/storage/FFFFFFFFF0000000000000000000000000000000"
 
@@ -573,8 +582,8 @@ func TestFindValue(t *testing.T) {
 		},
 		testNetworkControl{ //Cache in node
 			func(msg rpc.Message, addr string) {
-			
-				if storeRecipient != addr{
+
+				if storeRecipient != addr {
 					fmt.Println(addr)
 					t.Fail()
 				}
@@ -585,13 +594,13 @@ func TestFindValue(t *testing.T) {
 		},
 	}
 
-	fetchList := []testNetworkFetchControl{testNetworkFetchControl {func(url string, path string){
-				assertEqual(t, url, fetchURL)
-			},
-		},
+	fetchList := []testNetworkFetchControl{testNetworkFetchControl{func(url string, path string) {
+		assertEqual(t, url, fetchURL)
+	},
+	},
 	}
 
-	rt := routingTable.GetInstance()
+	rt := RTable
 	for i := 0; i < d7024e.IDLength*8; i++ {
 		rt.Buckets[i] = d7024e.NewBucket()
 	}
@@ -613,8 +622,12 @@ func TestFindValue(t *testing.T) {
 }
 
 func TestJoin(t *testing.T) {
-	kadem := GetInstance()
-	rt := routingTable.GetInstance()
+	RTable := routingTable.NewRoutingTable()
+	MBList := &messageBufferList.MessageBufferList{}
+	MData := metadata.NewFileMetaData()
+	var kadem = NewKademliaObject(RTable, MBList, MData)
+
+	rt := RTable
 	for i := 0; i < d7024e.IDLength*8; i++ {
 		rt.Buckets[i] = d7024e.NewBucket()
 	}
@@ -645,7 +658,7 @@ func TestJoin(t *testing.T) {
 				}
 				d, _ := json.Marshal(returnMessage)
 
-				GetInstance().HandleIncomingRPC(d, "10.10.10.10:1000")
+				kadem.HandleIncomingRPC(d, "10.10.10.10:1000")
 
 			},
 		},
@@ -687,8 +700,12 @@ func TestJoin(t *testing.T) {
 
 func TestBucketReExploration(t *testing.T) {
 	fmt.Println("STARTED")
-	kadem := GetInstance()
-	rt := routingTable.GetInstance()
+	RTable := routingTable.NewRoutingTable()
+	MBList := &messageBufferList.MessageBufferList{}
+	MData := metadata.NewFileMetaData()
+	var kadem = NewKademliaObject(RTable, MBList, MData)
+
+	rt := RTable
 	for i := 0; i < d7024e.IDLength*8; i++ {
 		rt.Buckets[i] = d7024e.NewBucket()
 	}
@@ -821,8 +838,12 @@ func TestBucketReExploration(t *testing.T) {
 // }
 
 func TestFetchFileRecieve(t *testing.T) {
-	kadem := GetInstance()
-	rt := routingTable.GetInstance()
+	RTable := routingTable.NewRoutingTable()
+	MBList := &messageBufferList.MessageBufferList{}
+	MData := metadata.NewFileMetaData()
+	var kadem = NewKademliaObject(RTable, MBList, MData)
+
+	rt := RTable
 	for i := 0; i < d7024e.IDLength*8; i++ {
 		rt.Buckets[i] = d7024e.NewBucket()
 	}
@@ -910,11 +931,15 @@ func TestFetchFileRecieve(t *testing.T) {
 }
 
 func TestAddContact(t *testing.T) {
-	rt := routingTable.GetInstance()
+	RTable := routingTable.NewRoutingTable()
+	MBList := &messageBufferList.MessageBufferList{}
+	MData := metadata.NewFileMetaData()
+	var kadem = NewKademliaObject(RTable, MBList, MData)
+
+	rt := RTable
 	for i := 0; i < d7024e.IDLength*8; i++ {
 		rt.Buckets[i] = d7024e.NewBucket()
 	}
-	kadem := GetInstance()
 	rt.Me.ID = d7024e.NewKademliaID("FFFF000000000000000000000000000000000000")
 	var wg1, wg2 sync.WaitGroup
 	wg1.Add(1)
@@ -943,7 +968,7 @@ func TestAddContact(t *testing.T) {
 			returnMessage := rpc.Message{rpc.PONG, sentMessage.RpcId, *d7024e.NewKademliaID("F000000000000000000000000000000000000000"), []byte{byte(0)}}
 			d, _ := json.Marshal(returnMessage)
 
-			GetInstance().HandleIncomingRPC(d, addr)
+			kadem.HandleIncomingRPC(d, addr)
 			wg1.Done()
 		},
 	})
@@ -960,7 +985,7 @@ func TestAddContact(t *testing.T) {
 
 			returnMessage := rpc.Message{rpc.TIME_OUT, *doNotCareID, *doNotCareID, []byte{byte(0)}}
 
-			mbList := messageBufferList.GetInstance()
+			mbList := MBList
 			buffer, _ := mbList.GetMessageBuffer(&sentMessage.RpcId)
 			buffer.AppendMessage(&returnMessage)
 			time.Sleep(2 * time.Second)
@@ -1021,12 +1046,16 @@ func TestAddContact(t *testing.T) {
 }
 
 func TestPing(t *testing.T) {
+	RTable := routingTable.NewRoutingTable()
+	MBList := &messageBufferList.MessageBufferList{}
+	MData := metadata.NewFileMetaData()
+	var kadem = NewKademliaObject(RTable, MBList, MData)
+
 	fmt.Println("ping test")
-	rt := routingTable.GetInstance()
+	rt := RTable
 	for i := 0; i < d7024e.IDLength*8; i++ {
 		rt.Buckets[i] = d7024e.NewBucket()
 	}
-	kadem := GetInstance()
 	var wg1 sync.WaitGroup
 	wg1.Add(1)
 
@@ -1059,12 +1088,16 @@ func TestPing(t *testing.T) {
 
 	kadem.HandleIncomingRPC(d, "10.10.10.10:1000")
 	wg1.Wait()
-	
+
 }
 
 func TestReturnContacts(t *testing.T) {
-	kadem := GetInstance()
-	rt := routingTable.GetInstance()
+	RTable := routingTable.NewRoutingTable()
+	MBList := &messageBufferList.MessageBufferList{}
+	MData := metadata.NewFileMetaData()
+	var kadem = NewKademliaObject(RTable, MBList, MData)
+
+	rt := RTable
 	sender := d7024e.NewContact(d7024e.NewKademliaID("FFFFFFFFF0000000000FF0000000000000000001"), "localhost:9999")
 	rpcId := d7024e.NewRandomKademliaID()
 
@@ -1120,26 +1153,30 @@ func TestReturnContacts(t *testing.T) {
 
 }
 
+func TestHandleFindValue(t *testing.T) {
 
+	RTable := routingTable.NewRoutingTable()
+	MBList := &messageBufferList.MessageBufferList{}
+	MData := metadata.NewFileMetaData()
+	var kadem = NewKademliaObject(RTable, MBList, MData)
 
-func TestHandleFindValue(t *testing.T){
 	fmt.Println("findvalue 1")
 	target := d7024e.NewContact(d7024e.NewKademliaID("FFFFFFFFF0000000000000000000000000000000"), "localhost:8000")
-	lookUpTestInitalSetup(target, t)
+	lookUpTestInitalSetup(target, t, kadem, RTable)
 
 	rpcID := d7024e.NewRandomKademliaID()
 	senderID := d7024e.NewKademliaID("FFFFFFFFF000000000000000000000FF00000007")
 	rpcData := rpc.FindNode{*d7024e.NewKademliaID("FFFFFFFFF0000000000000000000000000000000")}
 	rpcM, _ := rpc.Marshal(rpc.FIND_VALUE, *rpcID, *senderID, rpcData)
 
-	metaData := metadata.GetInstance()
+	metaData := MData
 	metaData.AddFile("N/A", "fffffffff0000000000000000000000000000000", false, time.Hour)
 
 	cList := []testNetworkControl{
 		testNetworkControl{
 			func(sentMessage rpc.Message, addr string) {
 				if sentMessage.RpcType == rpc.HAS_VALUE {
-					if !sentMessage.RpcId.Equals(rpcID){
+					if !sentMessage.RpcId.Equals(rpcID) {
 						fmt.Println("Invalid rpc id")
 						t.Fail()
 					}
@@ -1151,20 +1188,24 @@ func TestHandleFindValue(t *testing.T){
 		},
 	}
 
-	kadem := GetInstance()
 	net := testNetwork{}
 	net.CheckList = cList
 	kadem.SetNetworkHandler(&net)
 	fmt.Println("Started")
-	kadem.HandleIncomingRPC(rpcM ,"localhost:9999")
+	kadem.HandleIncomingRPC(rpcM, "localhost:9999")
 	fmt.Println("Came back")
-	time.Sleep(7*time.Second)
+	time.Sleep(7 * time.Second)
 }
 
-func TestHandleFindValueNotFound(t *testing.T){
+func TestHandleFindValueNotFound(t *testing.T) {
+	RTable := routingTable.NewRoutingTable()
+	MBList := &messageBufferList.MessageBufferList{}
+	MData := metadata.NewFileMetaData()
+	var kadem = NewKademliaObject(RTable, MBList, MData)
+
 	fmt.Println("Started find value")
 	target := d7024e.NewContact(d7024e.NewKademliaID("FFFFFFFFF0000000000000000000000000000000"), "localhost:8000")
-	lookUpTestInitalSetup(target, t)
+	lookUpTestInitalSetup(target, t, kadem, RTable)
 
 	expectedResult := []d7024e.Contact{
 		d7024e.NewContact(d7024e.NewKademliaID("FFFFFFFFF0000000000000000000000000000001"), "localhost:8001"),
@@ -1189,13 +1230,12 @@ func TestHandleFindValueNotFound(t *testing.T){
 	rpcData := rpc.FindNode{*d7024e.NewKademliaID("FFFFFFFFF00000000000000000ff000000000000")}
 	rpcM, _ := rpc.Marshal(rpc.FIND_VALUE, *rpcID, *senderID, rpcData)
 
-
 	cList := []testNetworkControl{
 		testNetworkControl{
 			func(sentMessage rpc.Message, addr string) {
 				assertEqual(t, addr, "localhost:9999")
 				if sentMessage.RpcType == rpc.CLOSEST_NODES {
-					if !sentMessage.RpcId.Equals(rpcID){
+					if !sentMessage.RpcId.Equals(rpcID) {
 						t.Fail()
 						fmt.Println("Unexpected rpc id")
 					}
@@ -1203,7 +1243,7 @@ func TestHandleFindValueNotFound(t *testing.T){
 					var reply rpc.ClosestNodes
 					json.Unmarshal(sentMessage.RpcData, &reply)
 
-					if len(reply.Closest) == len(expectedResult){
+					if len(reply.Closest) == len(expectedResult) {
 						for i, c := range reply.Closest {
 							assertEqual(t, c.ID.String(), expectedResult[i].ID.String())
 						}
@@ -1218,16 +1258,13 @@ func TestHandleFindValueNotFound(t *testing.T){
 			},
 		},
 	}
-	
 
-	kadem := GetInstance()
 	net := testNetwork{}
 	net.CheckList = cList
 	kadem.SetNetworkHandler(&net)
-	kadem.HandleIncomingRPC(rpcM ,"localhost:9999")
-	time.Sleep(7*time.Second)
+	kadem.HandleIncomingRPC(rpcM, "localhost:9999")
+	time.Sleep(7 * time.Second)
 }
-
 
 func helperReturnMarshal(data interface{}) []byte {
 	da, _ := json.Marshal(data)

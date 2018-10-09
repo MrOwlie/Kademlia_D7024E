@@ -6,18 +6,10 @@ import (
 	"time"
 )
 
-
-
-
-
-var instance *FileMetaData
-var once sync.Once
-
-
 type MetaData struct {
 	filePath        string
 	isPinned        bool
-	shouldRepublish	bool
+	shouldRepublish bool
 	lastRepublish   time.Time
 	timeOfInsertion time.Time
 	timeToLive      time.Duration
@@ -39,12 +31,10 @@ func (metaData *MetaData) Refresh() {
 	metaData.timeOfInsertion = time.Now()
 }
 
-
 type FileMetaData struct {
 	fileData map[string]*MetaData
 	mutex    sync.Mutex
 }
-
 
 func (fileMetaData *FileMetaData) FilesToDelete() (filesToDelete []string) {
 	fileMetaData.mutex.Lock()
@@ -68,9 +58,9 @@ func (fileMetaData *FileMetaData) FilesToDelete() (filesToDelete []string) {
 func (fileMetaData *FileMetaData) FilesToRepublish(republishInterval time.Duration) (filesToRepublish []string) {
 	fileMetaData.mutex.Lock()
 	defer fileMetaData.mutex.Unlock()
-	
+
 	for hash, metaData := range fileMetaData.fileData {
-		if metaData.isPinned && metaData.TimeToRepublish(republishInterval){
+		if metaData.isPinned && metaData.TimeToRepublish(republishInterval) {
 			if metaData.shouldRepublish {
 				filesToRepublish = append(filesToRepublish, hash)
 			} else {
@@ -137,11 +127,8 @@ func (fileMetaData *FileMetaData) AddFile(filePath string, hash string, pinned b
 	}
 }
 
-
-func GetInstance() *FileMetaData {
-	once.Do(func() {
-		instance = &FileMetaData{}
-		instance.fileData = make(map[string]*MetaData)
-	})
+func NewFileMetaData() *FileMetaData {
+	instance := &FileMetaData{}
+	instance.fileData = make(map[string]*MetaData)
 	return instance
 }

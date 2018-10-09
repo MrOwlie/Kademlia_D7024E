@@ -2,32 +2,23 @@ package messageBufferList
 
 import (
 	"sync"
+
 	"../d7024e"
 	"../rpc"
 )
 
-type messageBufferList struct {
+type MessageBufferList struct {
 	list  []*messageBuffer
 	mutex sync.Mutex
 }
 
-var instance *messageBufferList
-var once sync.Once
-
-func GetInstance() *messageBufferList {
-	once.Do(func() {
-		instance = &messageBufferList{}
-	})
-	return instance
-}
-
-func (mbList *messageBufferList) AddMessageBuffer(mb *messageBuffer) {
+func (mbList *MessageBufferList) AddMessageBuffer(mb *messageBuffer) {
 	mbList.mutex.Lock()
 	mbList.list = append(mbList.list, mb)
 	mbList.mutex.Unlock()
 }
 
-func (mbList *messageBufferList) GetMessageBuffer(id *d7024e.KademliaID) (*messageBuffer, bool) {
+func (mbList *MessageBufferList) GetMessageBuffer(id *d7024e.KademliaID) (*messageBuffer, bool) {
 	mbList.mutex.Lock()
 	for _, element := range mbList.list {
 		if element.RPCID.Equals(id) {
@@ -39,7 +30,7 @@ func (mbList *messageBufferList) GetMessageBuffer(id *d7024e.KademliaID) (*messa
 	return nil, false
 }
 
-func (mbList *messageBufferList) DeleteMessageBuffer(id *d7024e.KademliaID) bool {
+func (mbList *MessageBufferList) DeleteMessageBuffer(id *d7024e.KademliaID) bool {
 	mbList.mutex.Lock()
 	for i, element := range mbList.list {
 		if element.RPCID.Equals(id) {
@@ -55,7 +46,7 @@ func (mbList *messageBufferList) DeleteMessageBuffer(id *d7024e.KademliaID) bool
 	return false
 }
 
-func (mbList *messageBufferList) GarbageCollect() {
+func (mbList *MessageBufferList) GarbageCollect() {
 	mbList.mutex.Lock()
 	for i := len(mbList.list) - 1; i >= 0; i-- {
 		if mbList.list[i].hasExpired() {

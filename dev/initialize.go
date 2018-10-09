@@ -12,6 +12,9 @@ import (
 	"time"
 
 	"./kademlia"
+	"./messageBufferList"
+	"./metadata"
+	"./routingTable"
 
 	"./network"
 )
@@ -34,15 +37,15 @@ func main() {
 		ownPort = args[2]
 
 		if !validIP4(ip) && ip != "localhost" {
-			for{
+			for {
 				res, err := net.LookupHost(ip)
 				if err != nil {
 					fmt.Println(ip, " is not a valid ip-address or host-name, exiting.")
-					time.Sleep(5*time.Second)
+					time.Sleep(5 * time.Second)
 				} else {
 					ip = res[0]
-					break;
-				}		
+					break
+				}
 			}
 		}
 		if !validPort(port) {
@@ -76,11 +79,13 @@ func main() {
 		os.Mkdir(downloadPath, 0766)
 	}
 
-	var kadem = kademlia.GetInstance()
+	RTable := routingTable.NewRoutingTable()
+	MBList := &messageBufferList.MessageBufferList{}
+	MData := metadata.NewFileMetaData()
+	var kadem = kademlia.NewKademliaObject(RTable, MBList, MData)
 
-	network.SetPort(iOwnPort)
-	network.SetHandler(kadem)
-	net := network.GetInstance()
+	net := network.NewNetwork(iOwnPort, "")
+	net.SetHandler(kadem)
 	kadem.SetNetworkHandler(net)
 
 	var wgl sync.WaitGroup

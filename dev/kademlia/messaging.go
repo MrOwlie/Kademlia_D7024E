@@ -5,9 +5,6 @@ import (
 	"fmt"
 
 	"../d7024e"
-	"../messageBufferList"
-	"../metadata"
-	"../routingTable"
 	"../rpc"
 )
 
@@ -49,7 +46,7 @@ func (kademlia *kademlia) HandleIncomingRPC(data []byte, addr string) {
 
 	default:
 		if message.RpcType == rpc.CLOSEST_NODES || message.RpcType == rpc.PONG || message.RpcType == rpc.HAS_VALUE {
-			buffer_list := messageBufferList.GetInstance()
+			buffer_list := kademlia.MBList
 			m_buffer, hasId := buffer_list.GetMessageBuffer(&message.RpcId)
 			if hasId {
 				m_buffer.AppendMessage(&message)
@@ -63,7 +60,7 @@ func (kademlia *kademlia) HandleIncomingRPC(data []byte, addr string) {
 }
 
 func (kademlia *kademlia) handleFindNode(rpc_id d7024e.KademliaID, find_node rpc.FindNode, addr string) {
-	rt := routingTable.GetInstance()
+	rt := kademlia.routingTable
 	closest_nodes := rpc.ClosestNodes{rt.FindClosestContacts(&find_node.NodeId, 20)}
 	response, err := rpc.Marshal(rpc.CLOSEST_NODES, rpc_id, *rt.Me.ID, closest_nodes)
 
@@ -77,7 +74,7 @@ func (kademlia *kademlia) handleFindNode(rpc_id d7024e.KademliaID, find_node rpc
 }
 
 func (kademlia *kademlia) handlePing(rpc_id d7024e.KademliaID, addr string) {
-	rt := routingTable.GetInstance()
+	rt := kademlia.routingTable
 	response, err := json.Marshal(rpc.Message{RpcType: rpc.PONG, RpcId: rpc_id, SenderId: *rt.Me.ID, RpcData: []byte{byte(0)}})
 	if err != nil {
 		fmt.Println(err)
@@ -88,8 +85,8 @@ func (kademlia *kademlia) handlePing(rpc_id d7024e.KademliaID, addr string) {
 }
 
 func (kademlia *kademlia) handleFindValue(rpc_id d7024e.KademliaID, find_node rpc.FindNode, addr string) {
-	rt := routingTable.GetInstance()
-	metadata := metadata.GetInstance()
+	rt := kademlia.routingTable
+	metadata := kademlia.MetaData
 
 	hash := find_node.NodeId.String()
 	var response []byte
@@ -117,7 +114,7 @@ func (kademlia *kademlia) handleFindValue(rpc_id d7024e.KademliaID, find_node rp
 }
 
 func (kademlia *kademlia) handleStore(store_file *rpc.StoreFile, addr string) {
-	metadata := metadata.GetInstance()
+	metadata := kademlia.MetaData
 	hash := store_file.FileHash.String()
 
 	if metadata.HasFile(hash) {
@@ -135,7 +132,7 @@ func (kademlia *kademlia) handleStore(store_file *rpc.StoreFile, addr string) {
 		hostURL += "/storage/" + hash
 		err := kademlia.network.FetchFile(hostURL, filePath)
 		if err == nil {
-			metadata.AddFile(filePath, hash, false, calcTimeToLive(&store_file.FileHash))
+			metadata.AddFile(filePath, hash, false, kademlia.calcTimeToLive(&store_file.FileHash))
 		} else {
 			fmt.Println(err, " (", hostURL, ")")
 		}
@@ -143,7 +140,7 @@ func (kademlia *kademlia) handleStore(store_file *rpc.StoreFile, addr string) {
 }
 
 func (kademlia *kademlia) sendPingMessage(contact *d7024e.Contact, rpc_id *d7024e.KademliaID) {
-	rt := routingTable.GetInstance()
+	rt := kademlia.routingTable
 	data, m_err := json.Marshal(rpc.Message{RpcType: rpc.PING, RpcId: *rpc_id, SenderId: *rt.Me.ID, RpcData: []byte{byte(0)}})
 
 	if m_err != nil {
@@ -160,7 +157,7 @@ func (kademlia *kademlia) sendPingMessage(contact *d7024e.Contact, rpc_id *d7024
 }
 
 func (kademlia *kademlia) sendFindContactMessage(contact *d7024e.Contact, toFind *d7024e.KademliaID, rpc_id *d7024e.KademliaID) {
-	rt := routingTable.GetInstance()
+	rt := kademlia.routingTable
 	data, err := rpc.Marshal(rpc.FIND_NODE, *rpc_id, *rt.Me.ID, rpc.FindNode{*toFind})
 	if err != nil {
 		fmt.Println(err)
@@ -175,7 +172,7 @@ func (kademlia *kademlia) sendFindContactMessage(contact *d7024e.Contact, toFind
 }
 
 func (kademlia *kademlia) sendFindDataMessage(contact *d7024e.Contact, toFind *d7024e.KademliaID, rpc_id *d7024e.KademliaID) {
-	rt := routingTable.GetInstance()
+	rt := kademlia.routingTable
 	data, err := rpc.Marshal(rpc.FIND_VALUE, *rpc_id, *rt.Me.ID, rpc.FindNode{*toFind})
 	if err != nil {
 		fmt.Println(err)
@@ -190,7 +187,7 @@ func (kademlia *kademlia) sendFindDataMessage(contact *d7024e.Contact, toFind *d
 }
 
 func (kademlia *kademlia) sendStoreMessage(contact *d7024e.Contact, rpc_id *d7024e.KademliaID, fileHash *d7024e.KademliaID, host string) {
-	rt := routingTable.GetInstance()
+	rt := kademlia.routingTable
 	data, err := rpc.Marshal(rpc.STORE, *rpc_id, *rt.Me.ID, rpc.StoreFile{*fileHash, host})
 	if err != nil {
 		fmt.Println(err)
