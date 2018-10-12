@@ -1,41 +1,42 @@
 package kademlia
 
 import (
+	"fmt"
 	"os"
 	"time"
-	"fmt"
 
 	"../d7024e"
-	"../messageBufferList"
-	"../metadata"
-	"../routingTable"
 	"../rpc"
 )
 
 const republishInterval time.Duration = 24 * time.Hour
 
-func scheduleMessageBufferListGarbageCollect() {
-	mbList := messageBufferList.GetInstance()
+func (kademlia *kademlia) scheduleMessageBufferListGarbageCollect() {
+	mbList := kademlia.MBList
 	ticker := time.NewTicker(10 * time.Second)
 
 	go func() {
 		for {
 			select {
 			case <-ticker.C:
-				mbList.GarbageCollect()
+				fmt.Println("Starting garbage collect...")
+				list := mbList.GarbageCollect()
+				for i := 0; i < len(list); i++ {
+					list[i].MessageChannel <- &rpc.Message{RpcType: rpc.TIME_OUT, RpcId: *list[i].RPCID, SenderId: *d7024e.NewRandomKademliaID(), RpcData: nil}
+				}
+				fmt.Println("Garbage collect finished")
 			}
 		}
 	}()
 }
 
-func scheduleIdleBucketReExploration() {
+func (kademlia *kademlia) scheduleIdleBucketReExploration() {
 	ticker := time.NewTicker(60 * time.Minute)
 
 	go func() {
 		for {
 			select {
 			case <-ticker.C:
-				kademlia := GetInstance()
 				kademlia.IdleBucketReExploration()
 			}
 		}
@@ -43,18 +44,17 @@ func scheduleIdleBucketReExploration() {
 }
 
 func (kademlia *kademlia) IdleBucketReExploration() {
-	rTable := routingTable.GetInstance()
+	rTable := kademlia.routingTable
 	var kademliaIDs []*d7024e.KademliaID = rTable.GetRefreshIDs()
 	for i := 0; i < len(kademliaIDs); i++ {
 		go kademlia.lookupProcedure(procedureContacts, kademliaIDs[i])
 	}
 }
 
-func scheduleFileRepublish() {
+func (kademlia *kademlia) scheduleFileRepublish() {
 	ticker := time.NewTicker(60 * time.Minute)
 
 	go func() {
-		kademlia := GetInstance()
 		for {
 			select {
 			case <-ticker.C:
@@ -65,7 +65,7 @@ func scheduleFileRepublish() {
 }
 
 func (kademlia *kademlia) republishFiles() {
-	metaData := metadata.GetInstance()
+	metaData := kademlia.MetaData
 	fileHashes := metaData.FilesToRepublish(republishInterval)
 	fmt.Println("Repub")
 	for _, hash := range fileHashes {
@@ -77,8 +77,8 @@ func (kademlia *kademlia) republishFiles() {
 	}
 }
 
-func scheduleCacheExpiredFileDeletion() {
-	metaData := metadata.GetInstance()
+func (kademlia *kademlia) scheduleCacheExpiredFileDeletion() {
+	metaData := kademlia.MetaData
 	ticker := time.NewTicker(60 * time.Minute)
 
 	go func() {

@@ -27,26 +27,17 @@ type network struct {
 	sendingMutex sync.Mutex
 }
 
-var instance *network
 var once sync.Once
 
-func GetInstance() *network {
-	once.Do(func() {
-		instance = &network{}
-	})
-	return instance
+func NewNetwork(port int, ip string) *network {
+	net := &network{}
+	net.port = port
+	net.ip = ip
+	return net
 }
 
-func SetPort(port int) {
-	GetInstance().port = port
-}
-
-func SetIp(ip string) {
-	GetInstance().ip = ip
-}
-
-func SetHandler(h Handler) {
-	GetInstance().msgHandle = h
+func (network *network) SetHandler(h Handler) {
+	network.msgHandle = h
 }
 
 func (network *network) Listen(wg *sync.WaitGroup) {
@@ -72,7 +63,7 @@ func (network *network) Listen(wg *sync.WaitGroup) {
 			continue
 		}
 		strAddr := addr.IP.String() + ":" + strconv.Itoa(addr.Port)
-		fmt.Printf("Read %v bytes from UDP socket\n", n)
+		fmt.Printf("Read %v bytes from %s\n", n, strAddr)
 		go network.msgHandle.HandleIncomingRPC(data[0:n], strAddr)
 	}
 
