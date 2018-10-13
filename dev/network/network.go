@@ -63,7 +63,7 @@ func (network *network) Listen(wg *sync.WaitGroup) {
 			continue
 		}
 		strAddr := addr.IP.String() + ":" + strconv.Itoa(addr.Port)
-		fmt.Printf("Read %v bytes from UDP socket\n", n)
+		fmt.Printf("Read %v bytes from %s\n", n, strAddr)
 		go network.msgHandle.HandleIncomingRPC(data[0:n], strAddr)
 	}
 

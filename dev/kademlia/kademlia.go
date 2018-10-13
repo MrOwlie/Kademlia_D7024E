@@ -297,7 +297,9 @@ func (kademlia *kademlia) lookupSubProcedure(target d7024e.Contact, toFind *d702
 	rpcID := d7024e.NewRandomKademliaID()
 	mBuffer := messageBufferList.NewMessageBuffer(rpcID)
 	mBufferList := kademlia.MBList
+	fmt.Println("Adding message to message buffer...")
 	mBufferList.AddMessageBuffer(mBuffer)
+	fmt.Println("Message added to message buffer")
 
 	//send different messages depending on type
 	if lookupType == procedureContacts {
@@ -353,13 +355,13 @@ func (kademlia *kademlia) LookupData(id string) (filePath string, closest []d702
 	return
 }
 
-func (kademlia *kademlia) StoreFile(filePath string) {
+func (kademlia *kademlia) StoreFile(filePath string) string{
 	file, err := os.Open(filePath)
 	fmt.Println()
 	defer file.Close()
 	if err != nil {
 		fmt.Println(err)
-		return
+		return ""
 	}
 	fmt.Println("opened file ", filePath)
 
@@ -367,7 +369,7 @@ func (kademlia *kademlia) StoreFile(filePath string) {
 	_, err = io.Copy(h, file)
 	if err != nil {
 		fmt.Println(err)
-		return
+		return ""
 	}
 	file.Seek(0, 0)
 
@@ -380,7 +382,7 @@ func (kademlia *kademlia) StoreFile(filePath string) {
 	defer destination.Close()
 	if deserr != nil {
 		fmt.Println(deserr)
-		return
+		return ""
 	}
 
 	_, wrierr := io.Copy(destination, file)
@@ -388,7 +390,7 @@ func (kademlia *kademlia) StoreFile(filePath string) {
 	//fmt.Println(bytes, " bytes copied")
 	if wrierr != nil {
 		fmt.Println(wrierr)
-		return
+		return ""
 	}
 
 	fmt.Println("copied file")
@@ -405,6 +407,7 @@ func (kademlia *kademlia) StoreFile(filePath string) {
 		kademlia.sendStoreMessage(&c, d7024e.NewRandomKademliaID(), kademliaHash, rpc.SENDER)
 	}
 	fmt.Println("Sent store RPC")
+	return newFileName
 }
 
 func (kademlia *kademlia) Join(ip string, port int) bool {
@@ -430,6 +433,7 @@ func (kademlia *kademlia) Join(ip string, port int) bool {
 			json.Unmarshal(message.RpcData, &contacts)
 			fmt.Println("adding contacts ", len(contacts.Closest))
 			for _, contact := range contacts.Closest {
+				fmt.Printf("Added contact with ID:%v and with addres:%v\n", contact.ID.String(), contact.Address)
 				kademlia.addContact(&contact)
 			}
 			return true
@@ -481,6 +485,14 @@ func (kademlia *kademlia) addContact(contact *d7024e.Contact) {
 		}()
 	}
 
+}
+
+func (kademlia *kademlia) PinFile(fileHash string) bool{
+	return kademlia.MetaData.Pin(fileHash)
+}
+
+func (kademlia *kademlia) UnpinFile(fileHash string) bool{
+	return kademlia.MetaData.Unpin(fileHash)
 }
 
 func (kademlia *kademlia) calcTimeToLive(fileId *d7024e.KademliaID) (ttl time.Duration) {
