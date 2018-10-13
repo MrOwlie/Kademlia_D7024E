@@ -21,6 +21,7 @@ func (kademlia *kademlia) HandleIncomingRPC(data []byte, addr string) {
 	//Update contact
 	con := d7024e.NewContact(&message.SenderId, addr)
 	kademlia.addContact(&con)
+	fmt.Println("adding msg contact ", addr)
 	switch message.RpcType {
 
 	case rpc.FIND_NODE:

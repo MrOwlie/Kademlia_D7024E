@@ -11,7 +11,7 @@ services:
     command: ./initialize 10000
     networks:
       kademlia_network:
-        ipv4_address: 172.16.10.10
+        ipv4_address: 172.25.0.3
 
   Nodes:
     image: kademlia:latest
@@ -19,9 +19,23 @@ services:
     tty: true
     deploy:
       mode: replicated
-      replicas: 99
+      replicas: 1
     working_dir: /kademlia/bin
     command: ./initialize Main 10000 10000
+    depends_on:
+      - "Main"
+    networks:
+      - kademlia_network
+      
+  Test:
+    image: kademlia:latest
+    stdin_open: true
+    tty: true
+    deploy:
+      mode: replicated
+      replicas: 1
+    working_dir: /kademlia/bin
+#    command: ./initialize Main 10000 10000
     depends_on:
       - "Main"
     networks:
@@ -30,9 +44,10 @@ services:
       
 networks:
   kademlia_network:
-    driver: overlay
-    internal: true
+    driver: bridge
+    internal: false
+    external: true
     ipam:
       config:
       -
-        subnet: 172.16.10.0/24
+        subnet: 172.25.0.0/16

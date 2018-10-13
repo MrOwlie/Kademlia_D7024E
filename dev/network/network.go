@@ -72,6 +72,7 @@ func (network *network) Listen(wg *sync.WaitGroup) {
 func (network *network) SendMessage(addr string, data *[]byte) {
 	network.sendingMutex.Lock()
 	defer network.sendingMutex.Unlock()
+	fmt.Println("sending to ", addr)
 
 	laddr, l_err := net.ResolveUDPAddr("udp", addr)
 

@@ -1,2 +1,2 @@
-docker-compose up --scale kademliaNodes=2
+docker-compose up --detach --force-recreate --scale kademliaNodes=20
 pause
