@@ -163,3 +163,27 @@ func pathExists(path string) (bool, error) {
 	}
 	return true, err
 }
+
+type hubDuplex struct {
+	incoming chan []string
+	outgoing chan []string
+}
+
+type hub struct {
+	RoutingTable     *routingTable.RoutingTable
+	MBList           *messageBufferList.MessageBufferList
+	MetaData         *metadata.FileMetaData
+	KademliaInstance *kademlia.Kademlia
+}
+
+func newHub(port int) *hub {
+	hub := &hub{}
+	hub.RoutingTable = routingTable.NewRoutingTable()
+	hub.MBList = &messageBufferList.MessageBufferList{}
+	hub.MetaData = metadata.NewFileMetaData()
+	hub.KademliaInstance = kademlia.NewKademliaObject(hub.RoutingTable, hub.MBList, hub.MetaData)
+
+	net := network.NewNetwork(port, "")
+	net.SetHandler(hub.KademliaInstance)
+	hub.KademliaInstance.SetNetworkHandler(net)
+}

@@ -23,7 +23,7 @@ type NetworkHandler interface {
 	FetchFile(string, string) error
 }
 
-type kademlia struct {
+type Kademlia struct {
 	network      NetworkHandler
 	routingTable *routingTable.RoutingTable
 	MBList       *messageBufferList.MessageBufferList
@@ -50,8 +50,8 @@ const returnContacts = 3
 const returnHasValue = 4
 const returnTimedOut = 5
 
-func NewKademliaObject(RT *routingTable.RoutingTable, MBL *messageBufferList.MessageBufferList, MD *metadata.FileMetaData) *kademlia {
-	instance := &kademlia{nil, RT, MBL, MD}
+func NewKademliaObject(RT *routingTable.RoutingTable, MBL *messageBufferList.MessageBufferList, MD *metadata.FileMetaData) *Kademlia {
+	instance := &Kademlia{nil, RT, MBL, MD}
 	storagePath, _ = filepath.Abs("../storage/")
 	downLoadPath, _ = filepath.Abs("../downloads/")
 
@@ -68,11 +68,11 @@ func NewKademliaObject(RT *routingTable.RoutingTable, MBL *messageBufferList.Mes
 	return instance
 }
 
-func (kademlia *kademlia) SetNetworkHandler(handler NetworkHandler) {
+func (kademlia *Kademlia) SetNetworkHandler(handler NetworkHandler) {
 	kademlia.network = handler
 }
 
-func (kademlia *kademlia) lookupProcedure(procedureType int, target *d7024e.KademliaID) ([]d7024e.Contact, *d7024e.Contact, bool) {
+func (kademlia *Kademlia) lookupProcedure(procedureType int, target *d7024e.KademliaID) ([]d7024e.Contact, *d7024e.Contact, bool) {
 
 	rTable := kademlia.routingTable
 	candids := &d7024e.ContactCandidates{}
@@ -292,7 +292,7 @@ func (kademlia *kademlia) lookupProcedure(procedureType int, target *d7024e.Kade
 
 }
 
-func (kademlia *kademlia) lookupSubProcedure(target d7024e.Contact, toFind *d7024e.KademliaID, lookupType int, ch chan<- kademliaMessage) {
+func (kademlia *Kademlia) lookupSubProcedure(target d7024e.Contact, toFind *d7024e.KademliaID, lookupType int, ch chan<- kademliaMessage) {
 	//create and add its own messageBuffer to the singleton list
 	rpcID := d7024e.NewRandomKademliaID()
 	mBuffer := messageBufferList.NewMessageBuffer(rpcID)
@@ -334,12 +334,12 @@ func (kademlia *kademlia) lookupSubProcedure(target d7024e.Contact, toFind *d702
 	}
 }
 
-func (kademlia *kademlia) LookupContact(target *d7024e.KademliaID) (closest []d7024e.Contact) {
+func (kademlia *Kademlia) LookupContact(target *d7024e.KademliaID) (closest []d7024e.Contact) {
 	closest, _, _ = kademlia.lookupProcedure(procedureContacts, target)
 	return
 }
 
-func (kademlia *kademlia) LookupData(id string) (filePath string, closest []d7024e.Contact, fileWasFound bool) {
+func (kademlia *Kademlia) LookupData(id string) (filePath string, closest []d7024e.Contact, fileWasFound bool) {
 	fileHash := d7024e.NewKademliaID(id)
 	closest, fileHost, fileWasFound := kademlia.lookupProcedure(procedureValue, fileHash)
 	if fileWasFound {
@@ -353,7 +353,7 @@ func (kademlia *kademlia) LookupData(id string) (filePath string, closest []d702
 	return
 }
 
-func (kademlia *kademlia) StoreFile(filePath string) {
+func (kademlia *Kademlia) StoreFile(filePath string) {
 	file, err := os.Open(filePath)
 	fmt.Println()
 	defer file.Close()
@@ -407,7 +407,7 @@ func (kademlia *kademlia) StoreFile(filePath string) {
 	fmt.Println("Sent store RPC")
 }
 
-func (kademlia *kademlia) Join(ip string, port int) bool {
+func (kademlia *Kademlia) Join(ip string, port int) bool {
 	rt := kademlia.routingTable
 	fmt.Println(fmt.Sprintf("joining %q on port %d", ip, port))
 	bootstrapContact := d7024e.NewContact(d7024e.NewRandomKademliaID(), fmt.Sprintf("%s:%d", ip, port))
@@ -442,7 +442,7 @@ func (kademlia *kademlia) Join(ip string, port int) bool {
 
 }
 
-func (kademlia *kademlia) addContact(contact *d7024e.Contact) {
+func (kademlia *Kademlia) addContact(contact *d7024e.Contact) {
 
 	rt := kademlia.routingTable
 	pingContact, inserted := rt.AddContact(*contact)
@@ -483,7 +483,7 @@ func (kademlia *kademlia) addContact(contact *d7024e.Contact) {
 
 }
 
-func (kademlia *kademlia) calcTimeToLive(fileId *d7024e.KademliaID) (ttl time.Duration) {
+func (kademlia *Kademlia) calcTimeToLive(fileId *d7024e.KademliaID) (ttl time.Duration) {
 	exponent := float64(kademlia.routingTable.GetBucketIndex(fileId))
 	ttl = time.Duration(coefficentTTL * math.Exp(exponent))
 	return

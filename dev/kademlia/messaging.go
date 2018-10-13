@@ -10,7 +10,7 @@ import (
 
 //var storagePath string = "What ever the storage path is" //TODO fix this
 
-func (kademlia *kademlia) HandleIncomingRPC(data []byte, addr string) {
+func (kademlia *Kademlia) HandleIncomingRPC(data []byte, addr string) {
 	//fmt.Println("msg ", string(data))
 	var message rpc.Message = rpc.Message{}
 	unmarshaling_err := json.Unmarshal(data, &message)
@@ -21,6 +21,7 @@ func (kademlia *kademlia) HandleIncomingRPC(data []byte, addr string) {
 	//Update contact
 	con := d7024e.NewContact(&message.SenderId, addr)
 	kademlia.addContact(&con)
+	fmt.Println("adding contact ", addr, " ", &message.SenderId)
 	switch message.RpcType {
 
 	case rpc.FIND_NODE:
@@ -59,7 +60,7 @@ func (kademlia *kademlia) HandleIncomingRPC(data []byte, addr string) {
 	}
 }
 
-func (kademlia *kademlia) handleFindNode(rpc_id d7024e.KademliaID, find_node rpc.FindNode, addr string) {
+func (kademlia *Kademlia) handleFindNode(rpc_id d7024e.KademliaID, find_node rpc.FindNode, addr string) {
 	rt := kademlia.routingTable
 	closest_nodes := rpc.ClosestNodes{rt.FindClosestContacts(&find_node.NodeId, 20)}
 	response, err := rpc.Marshal(rpc.CLOSEST_NODES, rpc_id, *rt.Me.ID, closest_nodes)
@@ -73,7 +74,7 @@ func (kademlia *kademlia) handleFindNode(rpc_id d7024e.KademliaID, find_node rpc
 	kademlia.network.SendMessage(addr, &response)
 }
 
-func (kademlia *kademlia) handlePing(rpc_id d7024e.KademliaID, addr string) {
+func (kademlia *Kademlia) handlePing(rpc_id d7024e.KademliaID, addr string) {
 	rt := kademlia.routingTable
 	response, err := json.Marshal(rpc.Message{RpcType: rpc.PONG, RpcId: rpc_id, SenderId: *rt.Me.ID, RpcData: []byte{byte(0)}})
 	if err != nil {
@@ -84,7 +85,7 @@ func (kademlia *kademlia) handlePing(rpc_id d7024e.KademliaID, addr string) {
 	kademlia.network.SendMessage(addr, &response)
 }
 
-func (kademlia *kademlia) handleFindValue(rpc_id d7024e.KademliaID, find_node rpc.FindNode, addr string) {
+func (kademlia *Kademlia) handleFindValue(rpc_id d7024e.KademliaID, find_node rpc.FindNode, addr string) {
 	rt := kademlia.routingTable
 	metadata := kademlia.MetaData
 
@@ -113,7 +114,7 @@ func (kademlia *kademlia) handleFindValue(rpc_id d7024e.KademliaID, find_node rp
 	kademlia.network.SendMessage(addr, &response)
 }
 
-func (kademlia *kademlia) handleStore(store_file *rpc.StoreFile, addr string) {
+func (kademlia *Kademlia) handleStore(store_file *rpc.StoreFile, addr string) {
 	metadata := kademlia.MetaData
 	hash := store_file.FileHash.String()
 
@@ -139,7 +140,7 @@ func (kademlia *kademlia) handleStore(store_file *rpc.StoreFile, addr string) {
 	}
 }
 
-func (kademlia *kademlia) sendPingMessage(contact *d7024e.Contact, rpc_id *d7024e.KademliaID) {
+func (kademlia *Kademlia) sendPingMessage(contact *d7024e.Contact, rpc_id *d7024e.KademliaID) {
 	rt := kademlia.routingTable
 	data, m_err := json.Marshal(rpc.Message{RpcType: rpc.PING, RpcId: *rpc_id, SenderId: *rt.Me.ID, RpcData: []byte{byte(0)}})
 
@@ -156,7 +157,7 @@ func (kademlia *kademlia) sendPingMessage(contact *d7024e.Contact, rpc_id *d7024
 	kademlia.network.SendMessage(contact.Address, &data)
 }
 
-func (kademlia *kademlia) sendFindContactMessage(contact *d7024e.Contact, toFind *d7024e.KademliaID, rpc_id *d7024e.KademliaID) {
+func (kademlia *Kademlia) sendFindContactMessage(contact *d7024e.Contact, toFind *d7024e.KademliaID, rpc_id *d7024e.KademliaID) {
 	rt := kademlia.routingTable
 	data, err := rpc.Marshal(rpc.FIND_NODE, *rpc_id, *rt.Me.ID, rpc.FindNode{*toFind})
 	if err != nil {
@@ -171,7 +172,7 @@ func (kademlia *kademlia) sendFindContactMessage(contact *d7024e.Contact, toFind
 	kademlia.network.SendMessage(contact.Address, &data)
 }
 
-func (kademlia *kademlia) sendFindDataMessage(contact *d7024e.Contact, toFind *d7024e.KademliaID, rpc_id *d7024e.KademliaID) {
+func (kademlia *Kademlia) sendFindDataMessage(contact *d7024e.Contact, toFind *d7024e.KademliaID, rpc_id *d7024e.KademliaID) {
 	rt := kademlia.routingTable
 	data, err := rpc.Marshal(rpc.FIND_VALUE, *rpc_id, *rt.Me.ID, rpc.FindNode{*toFind})
 	if err != nil {
@@ -186,7 +187,7 @@ func (kademlia *kademlia) sendFindDataMessage(contact *d7024e.Contact, toFind *d
 	kademlia.network.SendMessage(contact.Address, &data)
 }
 
-func (kademlia *kademlia) sendStoreMessage(contact *d7024e.Contact, rpc_id *d7024e.KademliaID, fileHash *d7024e.KademliaID, host string) {
+func (kademlia *Kademlia) sendStoreMessage(contact *d7024e.Contact, rpc_id *d7024e.KademliaID, fileHash *d7024e.KademliaID, host string) {
 	rt := kademlia.routingTable
 	data, err := rpc.Marshal(rpc.STORE, *rpc_id, *rt.Me.ID, rpc.StoreFile{*fileHash, host})
 	if err != nil {

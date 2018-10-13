@@ -11,7 +11,7 @@ import (
 
 const republishInterval time.Duration = 24 * time.Hour
 
-func (kademlia *kademlia) scheduleMessageBufferListGarbageCollect() {
+func (kademlia *Kademlia) scheduleMessageBufferListGarbageCollect() {
 	mbList := kademlia.MBList
 	ticker := time.NewTicker(10 * time.Second)
 
@@ -28,7 +28,7 @@ func (kademlia *kademlia) scheduleMessageBufferListGarbageCollect() {
 	}()
 }
 
-func (kademlia *kademlia) scheduleIdleBucketReExploration() {
+func (kademlia *Kademlia) scheduleIdleBucketReExploration() {
 	ticker := time.NewTicker(60 * time.Minute)
 
 	go func() {
@@ -41,7 +41,7 @@ func (kademlia *kademlia) scheduleIdleBucketReExploration() {
 	}()
 }
 
-func (kademlia *kademlia) IdleBucketReExploration() {
+func (kademlia *Kademlia) IdleBucketReExploration() {
 	rTable := kademlia.routingTable
 	var kademliaIDs []*d7024e.KademliaID = rTable.GetRefreshIDs()
 	for i := 0; i < len(kademliaIDs); i++ {
@@ -49,7 +49,7 @@ func (kademlia *kademlia) IdleBucketReExploration() {
 	}
 }
 
-func (kademlia *kademlia) scheduleFileRepublish() {
+func (kademlia *Kademlia) scheduleFileRepublish() {
 	ticker := time.NewTicker(60 * time.Minute)
 
 	go func() {
@@ -62,7 +62,7 @@ func (kademlia *kademlia) scheduleFileRepublish() {
 	}()
 }
 
-func (kademlia *kademlia) republishFiles() {
+func (kademlia *Kademlia) republishFiles() {
 	metaData := kademlia.MetaData
 	fileHashes := metaData.FilesToRepublish(republishInterval)
 	fmt.Println("Repub")
@@ -75,7 +75,7 @@ func (kademlia *kademlia) republishFiles() {
 	}
 }
 
-func (kademlia *kademlia) scheduleCacheExpiredFileDeletion() {
+func (kademlia *Kademlia) scheduleCacheExpiredFileDeletion() {
 	metaData := kademlia.MetaData
 	ticker := time.NewTicker(60 * time.Minute)
 
