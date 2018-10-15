@@ -90,7 +90,7 @@ func (fileMetaData *FileMetaData) RefreshFile(hash string) {
 	}
 }
 
-func (fileMetaData *FileMetaData) Pin(hash string) {
+func (fileMetaData *FileMetaData) Pin(hash string) (found bool) {
 	fileMetaData.mutex.Lock()
 	defer fileMetaData.mutex.Unlock()
 	metaData, found := fileMetaData.fileData[hash]
@@ -100,9 +100,10 @@ func (fileMetaData *FileMetaData) Pin(hash string) {
 	} else {
 		fmt.Printf("No file with hash: %s \nwas found\n", hash)
 	}
+	return
 }
 
-func (fileMetaData *FileMetaData) Unpin(hash string) {
+func (fileMetaData *FileMetaData) Unpin(hash string) (found bool) {
 	fileMetaData.mutex.Lock()
 	defer fileMetaData.mutex.Unlock()
 
@@ -113,6 +114,7 @@ func (fileMetaData *FileMetaData) Unpin(hash string) {
 	} else {
 		fmt.Printf("No file with hash: %s \nwas found\n", hash)
 	}
+	return
 }
 
 func (fileMetaData *FileMetaData) AddFile(filePath string, hash string, pinned bool, timeToLive time.Duration) {

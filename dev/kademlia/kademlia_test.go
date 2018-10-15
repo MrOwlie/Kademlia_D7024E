@@ -83,10 +83,6 @@ var finalKRecipients map[string]*expectedRecipient = make(map[string]*expectedRe
 //Base test for LookupContact
 func lookUpTestInitalSetup(target d7024e.Contact, t *testing.T, kadem *kademlia, rt *routingTable.RoutingTable) *[]testNetworkControl {
 
-	for i := 0; i < d7024e.IDLength*8; i++ {
-		rt.Buckets[i] = d7024e.NewBucket()
-	}
-
 	startingContacts := []d7024e.Contact{
 		d7024e.NewContact(d7024e.NewKademliaID("FFFFFFFFF0000000000000000000000000000001"), "localhost:8001"),
 		d7024e.NewContact(d7024e.NewKademliaID("FFFFFFFFF0000000000000000000000000000002"), "localhost:8002"),
@@ -312,6 +308,7 @@ func TestFindNode(t *testing.T) {
 func TestFindNodeTimeOut(t *testing.T) {
 	target := d7024e.NewContact(d7024e.NewKademliaID("FFFFFFFFF0000000000000000000000000000000"), "localhost:8000")
 	expectedResult := []d7024e.Contact{
+		d7024e.NewContact(d7024e.NewKademliaID("FFFFFFFFF0000000000000000000000000000001"), "localhost:8001"),
 		d7024e.NewContact(d7024e.NewKademliaID("FFFFFFFFF0000000000000000000000000000002"), "localhost:8002"),
 		d7024e.NewContact(d7024e.NewKademliaID("FFFFFFFFF0000000000000000000000000000003"), "localhost:8003"),
 		d7024e.NewContact(d7024e.NewKademliaID("FFFFFFFFF0000000000000000000000000000004"), "localhost:8004"),
@@ -340,7 +337,25 @@ func TestFindNodeTimeOut(t *testing.T) {
 	var kadem = NewKademliaObject(RTable, MBList, MData)
 
 	cList := *lookUpTestInitalSetup(target, t, kadem, RTable)
-	cList[0] = testNetworkControl{func(msg rpc.Message, addr string) {}}
+	cList[0] = testNetworkControl{func(msg rpc.Message, addr string) {
+		if recipient, ok := firstAlphaRecipients[addr]; ok && recipient.valid {
+			recipient.valid = false
+		} else {
+			fmt.Printf("No message to %v expected.", addr)
+			t.Fail()
+		}
+
+		if expectedResult[0].Address == addr{
+			expectedResult = expectedResult[1:]
+		} else if expectedResult[1].Address == addr {
+			expectedResult = append(expectedResult[:1], expectedResult[2:]...)
+		} else if expectedResult[2].Address == addr {
+			expectedResult = append(expectedResult[:2], expectedResult[3:]...)
+		} else {
+			fmt.Printf("No message to %v expected", addr)
+			t.Fail()
+		}
+	}}
 
 	finalKRecipients["localhost:8007"].valid = false
 	finalKRecipients["localhost:8008"].valid = false
@@ -456,7 +471,7 @@ func TestFindNodeTimeOutRecovery(t *testing.T) {
 			nodesFoundM, _ := json.Marshal(rpc.ClosestNodes{nodesFound})
 			response := rpc.Message{rpc.CLOSEST_NODES, msg.RpcId, *finalKRecipients[addr].recipientId, nodesFoundM}
 			byteMsg, _ := json.Marshal(response)
-			time.Sleep(7 * time.Second)
+			time.Sleep(2 * time.Second)
 			kadem.HandleIncomingRPC(byteMsg, addr)
 		},
 	}
@@ -697,7 +712,7 @@ func TestJoin(t *testing.T) {
 	fmt.Println("Inserted contacts had right values!")
 
 }
-
+/*
 func TestBucketReExploration(t *testing.T) {
 	fmt.Println("STARTED")
 	RTable := routingTable.NewRoutingTable()
@@ -751,7 +766,7 @@ func TestBucketReExploration(t *testing.T) {
 	callsMade.Wait()
 	fmt.Println("DONE")
 }
-
+*/
 // func TestStoreFile(t *testing.T) {
 // 	kadem := GetInstance()
 // 	rt := routingTable.GetInstance()
@@ -1194,7 +1209,7 @@ func TestHandleFindValue(t *testing.T) {
 	fmt.Println("Started")
 	kadem.HandleIncomingRPC(rpcM, "localhost:9999")
 	fmt.Println("Came back")
-	time.Sleep(7 * time.Second)
+	time.Sleep(2 * time.Second)
 }
 
 func TestHandleFindValueNotFound(t *testing.T) {
@@ -1226,7 +1241,7 @@ func TestHandleFindValueNotFound(t *testing.T) {
 	}
 
 	rpcID := d7024e.NewRandomKademliaID()
-	senderID := d7024e.NewKademliaID("FFFFFFFFF0000000000000FF0000000000000001")
+	senderID := d7024e.NewKademliaID("FFFFFFFFF0000000000000000000000000000001")
 	rpcData := rpc.FindNode{*d7024e.NewKademliaID("FFFFFFFFF00000000000000000ff000000000000")}
 	rpcM, _ := rpc.Marshal(rpc.FIND_VALUE, *rpcID, *senderID, rpcData)
 
@@ -1263,7 +1278,7 @@ func TestHandleFindValueNotFound(t *testing.T) {
 	net.CheckList = cList
 	kadem.SetNetworkHandler(&net)
 	kadem.HandleIncomingRPC(rpcM, "localhost:9999")
-	time.Sleep(7 * time.Second)
+	time.Sleep(3 * time.Second)
 }
 
 func helperReturnMarshal(data interface{}) []byte {

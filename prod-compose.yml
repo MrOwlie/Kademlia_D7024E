@@ -1,0 +1,43 @@
+version: "3"
+services:
+  kademliaMain:
+    image: kademlia:latest
+    stdin_open: true
+    tty: true
+    working_dir: /kademlia/bin
+    command: ./initialize 10000
+    networks:
+      kademlia_network:
+        ipv4_address: 172.16.238.10
+
+  kademliaNodes:
+    image: kademlia:latest
+    stdin_open: true
+    tty: true
+    working_dir: /kademlia/bin
+    command: ./initialize 172.16.238.10 10000 10000
+    depends_on:
+      - "kademliaMain"
+#    ports:
+#      - "4000:80"
+    networks:
+      - kademlia_network
+      
+  kademliaTest:
+    image: kademlia:latest
+    stdin_open: true
+    tty: true
+    working_dir: /kademlia/bin
+    depends_on:
+      - "kademliaMain"
+#    ports:
+#      - "4000:80"
+    networks:
+      - kademlia_network
+      
+networks:
+  kademlia_network:
+    ipam:
+      config:
+      -
+        subnet: 172.16.238.0/24

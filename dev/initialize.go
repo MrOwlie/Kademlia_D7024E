@@ -26,7 +26,7 @@ func main() {
 
 	args := os.Args[1:]
 	var ownPort, ip, port string
-	var iOwnPort, iPort int
+	var iOwnPort int
 	performJoin := true
 	if len(args) == 1 {
 		ownPort = args[0]
@@ -52,7 +52,6 @@ func main() {
 			fmt.Printf("%q is not a valid port number, exiting.", port)
 			return
 		}
-		iPort, _ = strconv.Atoi(port)
 
 	} else {
 		fmt.Println("Unvalid amount of arguments")
@@ -79,60 +78,86 @@ func main() {
 		os.Mkdir(downloadPath, 0766)
 	}
 
-	RTable := routingTable.NewRoutingTable()
-	MBList := &messageBufferList.MessageBufferList{}
-	MData := metadata.NewFileMetaData()
-	var kadem = kademlia.NewKademliaObject(RTable, MBList, MData)
+	// RTable := routingTable.NewRoutingTable()
+	// MBList := &messageBufferList.MessageBufferList{}
+	// MData := metadata.NewFileMetaData()
+	// var kadem = kademlia.NewKademliaObject(RTable, MBList, MData)
 
-	net := network.NewNetwork(iOwnPort, "")
-	net.SetHandler(kadem)
-	kadem.SetNetworkHandler(net)
+	hub := newHub(iOwnPort)
 
-	var wgl sync.WaitGroup
-	wgl.Add(1)
-	go net.Listen(&wgl)
-	go net.ListenFileServer()
-	wgl.Wait()
+	// net := network.NewNetwork(iOwnPort, "")
+	// net.SetHandler(kadem)
+	// kadem.SetNetworkHandler(net)
 
-	if performJoin && !kadem.Join(ip, iPort) {
-		return
+	// var wgl sync.WaitGroup
+	// wgl.Add(1)
+	// go net.Listen(&wgl)
+	// go net.ListenFileServer()
+	// wgl.Wait()
+
+	CLIChannels := &hubDuplex{make(chan []string), make(chan []string)}
+	hub.addConnector(CLIChannels)
+
+	hub.Listen()
+
+	if performJoin {
+		CLIChannels.incoming <- []string{"join", ip, port}
+		response := <-CLIChannels.outgoing
+		fmt.Println(response[1])
+		if response[0] != "success" {
+			return
+		}
 	}
 	/*if performJoin {
 		kadem.IdleBucketReExploration()
 	}*/
 
-	var action, param1 string
-	for {
+	var CLIExit sync.WaitGroup
+	CLIExit.Add(1)
 
-		fmt.Println("\n\nPlease enter a command, type '?' for help :D :")
-		fmt.Scanln(&action, &param1)
+	go func() {
+		var action, param1 string
+		for {
 
-		switch {
-		case action == "?":
-			fmt.Println("Available commands:")
-			fmt.Println("\"store 'filepath'\" to store a file.")
-			fmt.Println("\"fetch 'key-value'\" to fetch a file.")
-			fmt.Println("\"exit\" to exit the application.")
-		case action == "exit":
-			return
-		case action == "store":
-			path, _ := filepath.Abs(param1)
-			/*_, err := ioutil.ReadFile(path)
-			if err != nil {
-				fmt.Println("An error occured while reading the file!")
-			} else {*/
-			kadem.StoreFile(path)
-			//}
-		case action == "fetch":
-			_, closest, _ := kadem.LookupData(param1)
-			fmt.Println("Nodes found :", len(closest))
-			for _, c := range closest {
-				fmt.Println(c.ID)
+			fmt.Println("\n\nPlease enter a command, type '?' for help :D :")
+			fmt.Scanln(&action, &param1)
+
+			switch {
+			case action == "?":
+				fmt.Println("Available commands:")
+				fmt.Println("\"store 'filepath'\" to store a file.")
+				fmt.Println("\"cat 'key-value'\" to fetch a file.")
+				fmt.Println("\"exit\" to exit the application.")
+			case action == "exit":
+				CLIExit.Done()
+			case action == "store":
+				path, _ := filepath.Abs(param1)
+				/*_, err := ioutil.ReadFile(path)
+				if err != nil {
+					fmt.Println("An error occured while reading the file!")
+				} else {*/
+				//kadem.StoreFile(path)
+				CLIChannels.incoming <- []string{"store", path}
+				response := <-CLIChannels.outgoing
+				fmt.Println(response[1])
+				//}
+			case action == "cat":
+				// _, closest, _ := kadem.LookupData(param1)
+				// fmt.Println("Nodes found :", len(closest))
+				// for _, c := range closest {
+				// 	fmt.Println(c.ID)
+				// }
+				CLIChannels.incoming <- []string{"cat", param1}
+				response := <-CLIChannels.outgoing
+				fmt.Println(response[1])
+			default:
+				fmt.Println("The command entered is invalid, try again.")
 			}
-		default:
-			fmt.Println("The command entered is invalid, try again.")
 		}
-	}
+	}()
+
+	CLIExit.Wait()
+	return
 
 }
 
@@ -169,11 +194,17 @@ type hubDuplex struct {
 	outgoing chan []string
 }
 
+type hubMessage struct {
+	command   []string
+	Connector *hubDuplex
+}
+
 type hub struct {
 	RoutingTable     *routingTable.RoutingTable
 	MBList           *messageBufferList.MessageBufferList
 	MetaData         *metadata.FileMetaData
 	KademliaInstance *kademlia.Kademlia
+	Connectors       []*hubDuplex
 }
 
 func newHub(port int) *hub {
@@ -186,4 +217,63 @@ func newHub(port int) *hub {
 	net := network.NewNetwork(port, "")
 	net.SetHandler(hub.KademliaInstance)
 	hub.KademliaInstance.SetNetworkHandler(net)
+
+	var wgl sync.WaitGroup
+	wgl.Add(1)
+	go net.Listen(&wgl)
+	go net.ListenFileServer()
+	wgl.Wait()
+
+	return hub
+}
+
+func (h *hub) addConnector(Connector *hubDuplex) {
+	h.Connectors = append(h.Connectors, Connector)
+}
+
+func (h *hub) Listen() {
+
+	mergeChan := make(chan hubMessage)
+
+	for i := 0; i < len(h.Connectors); i++ {
+		go func(a int) {
+			command := <-h.Connectors[a].incoming
+			mergeChan <- hubMessage{command, h.Connectors[a]}
+		}(i)
+	}
+
+	go func() {
+		for {
+			message := <-mergeChan
+			command := message.command
+			var response []string
+
+			switch {
+			case command[0] == "join":
+				iPort, _ := strconv.Atoi(command[2])
+				joined := h.KademliaInstance.Join(command[1], iPort)
+				if joined {
+					response = []string{"success", "Successfully joined " + command[1]}
+				} else {
+					response = []string{"fail", "Join attempt towards " + command[1] + " timed out"}
+				}
+
+			case command[0] == "store":
+				filename := h.KademliaInstance.StoreFile(command[1])
+				response = []string{"success", "Successfully stored file as " + filename}
+
+			case command[0] == "cat":
+				path, _, found := h.KademliaInstance.LookupData(command[1])
+				if found {
+					response = []string{"success", "Successfully downloaded file", path}
+				} else {
+					response = []string{"fail", "File was not found"}
+				}
+			default:
+				response = []string{"fail", "The command was unrecognized"}
+			}
+
+			message.Connector.outgoing <- response
+		}
+	}()
 }
