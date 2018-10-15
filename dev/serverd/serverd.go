@@ -10,11 +10,11 @@ import (
 )
 
 type apiServer struct {
-	recivingChannel chan string
-	sendingChannel chan string 
+	recivingChannel chan []string
+	sendingChannel chan []string 
 }
 
-func NewAPIServer(recivingChannel chan string, sendingChannel chan string) *apiServer{
+func NewAPIServer(recivingChannel chan []string, sendingChannel chan []string) *apiServer{
 	return &apiServer{recivingChannel: recivingChannel, sendingChannel: sendingChannel}
 }
 
@@ -35,9 +35,10 @@ func (server *apiServer) pinFile(response http.ResponseWriter, request *http.Req
 		response.WriteHeader(http.StatusBadRequest)
 		return
 	} else {
-		server.sendingChannel<- "pin "+hash
-		responseBody := <-server.recivingChannel
-		response.Write([]byte(responseBody))
+		message := []string{"pin", hash}
+		server.sendingChannel<- message
+		results := <-server.recivingChannel
+		response.Write([]byte(results[1]))
 	}
 }
 
@@ -46,9 +47,10 @@ func (server *apiServer) unpinFile(response http.ResponseWriter, request *http.R
 	if hash == "" {
 		response.WriteHeader(http.StatusBadRequest)
 	} else {
-		server.sendingChannel<- "unpin "+hash
-		responseBody := <-server.recivingChannel
-		response.Write([]byte(responseBody))
+		message := []string{"unpin", hash}
+		server.sendingChannel<- message
+		results := <-server.recivingChannel
+		response.Write([]byte(results[1]))
 	}
 }
 
@@ -58,9 +60,10 @@ func (server *apiServer) fetchFile(response http.ResponseWriter, request *http.R
 		//Om ingen fil specificeras kan man kanske skicka tillbaka hashes för alla filer man har?
 		response.WriteHeader(http.StatusBadRequest)
 	} else {
-		server.sendingChannel<- "fetch "+hash
-		filePath := <-server.recivingChannel
-		file, err := os.Open(filePath)
+		message := []string{"fetch", hash}
+		server.sendingChannel<- message
+		results := <-server.recivingChannel
+		file, err := os.Open(results[1])
 		if err != nil {
 			fmt.Println(err)
 			response.WriteHeader(http.StatusInternalServerError)
@@ -86,9 +89,10 @@ func (server *apiServer) uploadFile(response http.ResponseWriter, request *http.
 		}
 		newFile, err := os.Create(basePath+fileHeader[0].Filename)
 		io.Copy(newFile, file)
+		message := []string{"store", newFile.Name()}
 
-		server.sendingChannel<- "store "+newFile.Name()
-		hash := <-server.recivingChannel
-		response.Write([]byte(hash))
+		server.sendingChannel<- message
+		results := <-server.recivingChannel
+		response.Write([]byte(results[1]))
 	}	
 }
