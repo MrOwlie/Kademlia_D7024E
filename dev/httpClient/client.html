@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html>
+ <head>
+   <title>Api Client for Kademlia</title>
+ </head>
+ <body>
+   <div>
+     <h1>Api Client for Kademlia</h1>
+     <p>Host URL: http://<input id="hostURL" type="text"/></p>
+     <p>File hash: <input id="fileHash" type="text"/><p>
+     <p>File: <input id="file" type="file"/></p>
+
+   </div>
+   <div>
+     <input id="pin" value="PIN" type="button">
+     <input id="unpin" value="UNPIN" type="button">
+     <input id="fetch" value="FETCH" type="button">
+     <input id="store" value="STORE" type="button">
+   </div>
+
+   <div>
+     <p/>
+     <textarea id="response" rows="45" cols="250"> </textarea>
+   </div>
+
+   <script src="compiled/apiClient.js"></script>
+ </body>
+</html>
