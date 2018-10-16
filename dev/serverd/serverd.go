@@ -60,16 +60,20 @@ func (server *apiServer) fetchFile(response http.ResponseWriter, request *http.R
 		//Om ingen fil specificeras kan man kanske skicka tillbaka hashes för alla filer man har?
 		response.WriteHeader(http.StatusBadRequest)
 	} else {
-		message := []string{"fetch", hash}
+		message := []string{"cat", hash}
 		server.sendingChannel<- message
 		results := <-server.recivingChannel
-		file, err := os.Open(results[1])
-		if err != nil {
-			fmt.Println(err)
-			response.WriteHeader(http.StatusInternalServerError)
-			return
+		if results[0] == "fail"{
+			response.WriteHeader(http.StatusNotFound)
+		} else {
+			file, err := os.Open(results[2])
+			if err != nil {
+				fmt.Println(err)
+				response.WriteHeader(http.StatusInternalServerError)
+				return
+			}
+			io.Copy(response, file)
 		}
-		io.Copy(response, file)
 	}
 }
 
@@ -93,6 +97,6 @@ func (server *apiServer) uploadFile(response http.ResponseWriter, request *http.
 
 		server.sendingChannel<- message
 		results := <-server.recivingChannel
-		response.Write([]byte(results[1]))
+		response.Write([]byte(results[1]))		
 	}	
 }
