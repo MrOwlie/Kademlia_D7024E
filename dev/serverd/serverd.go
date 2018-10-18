@@ -31,7 +31,9 @@ func (server *apiServer) ListenApiServer( /*int serverPort*/ ) {
 
 func (server *apiServer) pinFile(response http.ResponseWriter, request *http.Request) {
 	hash := request.FormValue("hash")
-	setupResponse(response)
+	response.Header().Set("Access-Control-Allow-Origin", "")
+    response.Header().Set("Access-Control-Allow-Methods", "POST, GET, PATCH")
+    response.Header().Set("Access-Control-Allow-Headers", "Accept, Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization")
 	if hash == "" {
 		response.WriteHeader(http.StatusBadRequest)
 		return
@@ -45,7 +47,9 @@ func (server *apiServer) pinFile(response http.ResponseWriter, request *http.Req
 
 func (server *apiServer) unpinFile(response http.ResponseWriter, request *http.Request) {
 	hash := request.FormValue("hash")
-	setupResponse(response)
+	response.Header().Set("Access-Control-Allow-Origin", "")
+    response.Header().Set("Access-Control-Allow-Methods", "POST, GET, PATCH")
+    response.Header().Set("Access-Control-Allow-Headers", "Accept, Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization")
 	if hash == "" {
 		response.WriteHeader(http.StatusBadRequest)
 	} else {
@@ -58,7 +62,9 @@ func (server *apiServer) unpinFile(response http.ResponseWriter, request *http.R
 
 func (server *apiServer) fetchFile(response http.ResponseWriter, request *http.Request) {
 	hash := request.FormValue("hash")
-	setupResponse(response)
+	response.Header().Set("Access-Control-Allow-Origin", "")
+    response.Header().Set("Access-Control-Allow-Methods", "POST, GET, PATCH")
+    response.Header().Set("Access-Control-Allow-Headers", "Accept, Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization")
 	if hash == "" {
 		//Om ingen fil specificeras kan man kanske skicka tillbaka hashes för alla filer man har?
 		response.WriteHeader(http.StatusBadRequest)
@@ -82,7 +88,9 @@ func (server *apiServer) fetchFile(response http.ResponseWriter, request *http.R
 
 func (server *apiServer) uploadFile(response http.ResponseWriter, request *http.Request) {
 	err := request.ParseMultipartForm(math.MaxInt64)
-	setupResponse(response)
+	response.Header().Set("Access-Control-Allow-Origin", "")
+    response.Header().Set("Access-Control-Allow-Methods", "POST, GET, PATCH")
+    response.Header().Set("Access-Control-Allow-Headers", "Accept, Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization")
 	if err != nil{
 		fmt.Println(err)
 		response.WriteHeader(http.StatusBadRequest)
@@ -103,10 +111,4 @@ func (server *apiServer) uploadFile(response http.ResponseWriter, request *http.
 		results := <-server.recivingChannel
 		response.Write([]byte(results[1]))		
 	}	
-}
-
-func setupResponse(w http.ResponseWriter) {
-    (w).Header().Set("Access-Control-Allow-Origin", "")
-    (w).Header().Set("Access-Control-Allow-Methods", "POST, GET, PATCH")
-    (w).Header().Set("Access-Control-Allow-Headers", "Accept, Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization")
 }
