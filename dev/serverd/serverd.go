@@ -31,7 +31,7 @@ func (server *apiServer) ListenApiServer( /*int serverPort*/ ) {
 
 func (server *apiServer) pinFile(response http.ResponseWriter, request *http.Request) {
 	hash := request.FormValue("hash")
-	response.Header().Set("Access-Control-Allow-Origin", "")
+	response.Header().Set("Access-Control-Allow-Origin", "*")
     response.Header().Set("Access-Control-Allow-Methods", "POST, GET, PATCH")
     response.Header().Set("Access-Control-Allow-Headers", "Accept, Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization")
 	if hash == "" {
@@ -47,7 +47,7 @@ func (server *apiServer) pinFile(response http.ResponseWriter, request *http.Req
 
 func (server *apiServer) unpinFile(response http.ResponseWriter, request *http.Request) {
 	hash := request.FormValue("hash")
-	response.Header().Set("Access-Control-Allow-Origin", "")
+	response.Header().Set("Access-Control-Allow-Origin", "*")
     response.Header().Set("Access-Control-Allow-Methods", "POST, GET, PATCH")
     response.Header().Set("Access-Control-Allow-Headers", "Accept, Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization")
 	if hash == "" {
@@ -62,7 +62,7 @@ func (server *apiServer) unpinFile(response http.ResponseWriter, request *http.R
 
 func (server *apiServer) fetchFile(response http.ResponseWriter, request *http.Request) {
 	hash := request.FormValue("hash")
-	response.Header().Set("Access-Control-Allow-Origin", "")
+	response.Header().Set("Access-Control-Allow-Origin", "*")
     response.Header().Set("Access-Control-Allow-Methods", "POST, GET, PATCH")
     response.Header().Set("Access-Control-Allow-Headers", "Accept, Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization")
 	if hash == "" {
@@ -88,7 +88,7 @@ func (server *apiServer) fetchFile(response http.ResponseWriter, request *http.R
 
 func (server *apiServer) uploadFile(response http.ResponseWriter, request *http.Request) {
 	err := request.ParseMultipartForm(math.MaxInt64)
-	response.Header().Set("Access-Control-Allow-Origin", "")
+	response.Header().Set("Access-Control-Allow-Origin", "*")
     response.Header().Set("Access-Control-Allow-Methods", "POST, GET, PATCH")
     response.Header().Set("Access-Control-Allow-Headers", "Accept, Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization")
 	if err != nil{
