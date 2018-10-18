@@ -14,9 +14,9 @@ import (
 	"./kademlia"
 	"./messageBufferList"
 	"./metadata"
+	"./network"
 	"./routingTable"
 	"./serverd"
-	"./network"
 )
 
 func main() {
@@ -97,7 +97,7 @@ func main() {
 
 	CLIChannels := &hubDuplex{make(chan []string), make(chan []string)}
 	hub.addConnector(CLIChannels)
-	
+
 	APIChannels := &hubDuplex{make(chan []string), make(chan []string)}
 	ApiServer := serverd.NewAPIServer(APIChannels.outgoing, APIChannels.incoming)
 	ApiServer.ListenApiServer()
@@ -276,15 +276,15 @@ func (h *hub) Listen() {
 				}
 
 			case command[0] == "pin":
-				if h.KademliaInstance.PinFile(command[1]){
-					response = []string{"success", "Pinned "+command[1]}
+				if h.KademliaInstance.PinFile(command[1]) {
+					response = []string{"success", "Pinned " + command[1]}
 				} else {
 					response = []string{"fail", "File was not found"}
 				}
 
 			case command[0] == "unpin":
-				if h.KademliaInstance.PinFile(command[1]){
-					response = []string{"success", "Unpinned "+command[1]}
+				if h.KademliaInstance.PinFile(command[1]) {
+					response = []string{"success", "Unpinned " + command[1]}
 				} else {
 					response = []string{"fail", "File was not found"}
 				}

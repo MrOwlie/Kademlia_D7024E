@@ -1,25 +1,25 @@
 package serverd
 
 import (
-	"net/http"
 	"fmt"
-	"os"
 	"io"
-	"path/filepath"
 	"math"
+	"net/http"
+	"os"
+	"path/filepath"
 )
 
 type apiServer struct {
 	recivingChannel chan []string
-	sendingChannel chan []string 
+	sendingChannel  chan []string
 }
 
-func NewAPIServer(recivingChannel chan []string, sendingChannel chan []string) *apiServer{
+func NewAPIServer(recivingChannel chan []string, sendingChannel chan []string) *apiServer {
 	return &apiServer{recivingChannel: recivingChannel, sendingChannel: sendingChannel}
 }
 
 //Låta callern specifiera vilken port servern ska köra på?
-func (server *apiServer) ListenApiServer(/*int serverPort*/){
+func (server *apiServer) ListenApiServer( /*int serverPort*/ ) {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/pin", server.pinFile)
 	mux.HandleFunc("/unpin", server.unpinFile)
@@ -29,7 +29,7 @@ func (server *apiServer) ListenApiServer(/*int serverPort*/){
 	http.ListenAndServe(":80", mux)
 }
 
-func (server *apiServer) pinFile(response http.ResponseWriter, request *http.Request){
+func (server *apiServer) pinFile(response http.ResponseWriter, request *http.Request) {
 	hash := request.FormValue("hash")
 	setupResponse(response)
 	if hash == "" {
@@ -37,26 +37,26 @@ func (server *apiServer) pinFile(response http.ResponseWriter, request *http.Req
 		return
 	} else {
 		message := []string{"pin", hash}
-		server.sendingChannel<- message
+		server.sendingChannel <- message
 		results := <-server.recivingChannel
 		response.Write([]byte(results[1]))
 	}
 }
 
-func (server *apiServer) unpinFile(response http.ResponseWriter, request *http.Request){
+func (server *apiServer) unpinFile(response http.ResponseWriter, request *http.Request) {
 	hash := request.FormValue("hash")
 	setupResponse(response)
 	if hash == "" {
 		response.WriteHeader(http.StatusBadRequest)
 	} else {
 		message := []string{"unpin", hash}
-		server.sendingChannel<- message
+		server.sendingChannel <- message
 		results := <-server.recivingChannel
 		response.Write([]byte(results[1]))
 	}
 }
 
-func (server *apiServer) fetchFile(response http.ResponseWriter, request *http.Request){
+func (server *apiServer) fetchFile(response http.ResponseWriter, request *http.Request) {
 	hash := request.FormValue("hash")
 	setupResponse(response)
 	if hash == "" {
@@ -64,9 +64,9 @@ func (server *apiServer) fetchFile(response http.ResponseWriter, request *http.R
 		response.WriteHeader(http.StatusBadRequest)
 	} else {
 		message := []string{"cat", hash}
-		server.sendingChannel<- message
+		server.sendingChannel <- message
 		results := <-server.recivingChannel
-		if results[0] == "fail"{
+		if results[0] == "fail" {
 			response.WriteHeader(http.StatusNotFound)
 		} else {
 			file, err := os.Open(results[2])
@@ -80,7 +80,7 @@ func (server *apiServer) fetchFile(response http.ResponseWriter, request *http.R
 	}
 }
 
-func (server *apiServer) uploadFile(response http.ResponseWriter, request *http.Request){
+func (server *apiServer) uploadFile(response http.ResponseWriter, request *http.Request) {
 	err := request.ParseMultipartForm(math.MaxInt64)
 	setupResponse(response)
 	if err != nil{
@@ -95,11 +95,11 @@ func (server *apiServer) uploadFile(response http.ResponseWriter, request *http.
 			response.WriteHeader(http.StatusBadRequest)
 			return
 		}
-		newFile, err := os.Create(basePath+fileHeader[0].Filename)
+		newFile, err := os.Create(basePath + fileHeader[0].Filename)
 		io.Copy(newFile, file)
 		message := []string{"store", newFile.Name()}
 
-		server.sendingChannel<- message
+		server.sendingChannel <- message
 		results := <-server.recivingChannel
 		response.Write([]byte(results[1]))		
 	}	
