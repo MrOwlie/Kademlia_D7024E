@@ -62,7 +62,7 @@ function fetch() {
 function store() {
   let requestURL =  "http://" + hostURL.value + '/pin?hash=' + fileHash.value
   console.log(requestURL)
-  request(requestURL, 'patch', file.value, function cb(status, res){
+  request(requestURL, 'post', file.value, function cb(status, res){
     if(status == null){
       responseField.value = "FAILED"
     } else {
