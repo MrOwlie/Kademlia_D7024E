@@ -21,9 +21,6 @@ function pin() {
         if (status == null) {
             responseField.value = "FAILED";
         }
-        else if (res == null) {
-            console.log("No Response");
-        }
         else {
             responseField.value = res.body;
         }
@@ -35,9 +32,6 @@ function unpin() {
     request(requestURL, 'patch', null, function cb(status, res) {
         if (status == null) {
             responseField.value = "FAILED";
-        }
-        else if (res == null) {
-            console.log("No Response");
         }
         else {
             responseField.value = res.body;
@@ -63,12 +57,9 @@ function fetch() {
 function store() {
     var requestURL = "http://" + hostURL.value + '/pin?hash=' + fileHash.value;
     console.log(requestURL);
-    request(requestURL, 'patch', file.value, function cb(status, res) {
+    request(requestURL, 'post', file.value, function cb(status, res) {
         if (status == null) {
             responseField.value = "FAILED";
-        }
-        else if (res == null) {
-            console.log("No Response");
         }
         else {
             responseField.value = res.body;
