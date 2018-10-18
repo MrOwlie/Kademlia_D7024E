@@ -8,6 +8,8 @@ services:
       -  ./dev:/kademlia/bin
     working_dir: /kademlia/bin
     command: go run initialize.go 10000
+    ports:
+      - "8080:40"
     networks:
       kademlia_network:
         ipv4_address: 172.16.238.10
@@ -22,7 +24,7 @@ services:
     command: go run initialize.go 172.16.238.10 10000 10000
     depends_on:
       - "kademliaMain"
-#    ports:
+ #   ports:
 #      - "4000:80"
     networks:
       - kademlia_network
