@@ -23,7 +23,7 @@ function pin() {
             responseField.value = "FAILED";
         }
         else {
-            responseField.value = res.body;
+            responseField.value = res;
         }
     });
 }
@@ -35,7 +35,7 @@ function unpin() {
             responseField.value = "FAILED";
         }
         else {
-            responseField.value = res.body;
+            responseField.value = res;
         }
     });
 }
@@ -51,7 +51,7 @@ function fetch() {
         }
         else {
             console.log(res);
-            responseField.value = res.body;
+            responseField.value = res;
         }
     });
 }
@@ -60,13 +60,12 @@ function store() {
     console.log(requestURL);
     var formData = new FormData(form);
     formData.append('file', file.files[0]);
-    console.log(formData.get('file').toString());
     request(requestURL, 'post', formData, function cb(status, res) {
         if (status != 200) {
             responseField.value = "FAILED";
         }
         else {
-            responseField.value = res.body;
+            responseField.value = res;
         }
     });
 }

@@ -28,7 +28,7 @@ function pin() {
     if(status != 200){
       responseField.value = "FAILED"
     } else {
-      responseField.value = res.body
+      responseField.value = res
     }
   })
 }
@@ -40,7 +40,7 @@ function unpin() {
     if(status != 200){
       responseField.value = "FAILED"
     } else {
-      responseField.value = res.body
+      responseField.value = res
     }
   })
 }
@@ -55,7 +55,7 @@ function fetch() {
       console.log("No Response")
     } else {
       console.log(res)
-      responseField.value = res.body
+      responseField.value = res
     }
   })
 }
@@ -66,12 +66,11 @@ function store() {
 
   var formData = new FormData(form)
   formData.append('file', file.files[0])
-  console.log(formData.get('file').toString())
   request(requestURL, 'post', formData, function cb(status, res){
     if(status != 200){
       responseField.value = "FAILED"
     } else {
-      responseField.value = res.body
+      responseField.value = res
     }
   })
 }
