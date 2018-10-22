@@ -35,12 +35,16 @@ func (server *apiServer) pinFile(response http.ResponseWriter, request *http.Req
     response.Header().Set("Access-Control-Allow-Methods", "POST, GET, PATCH")
     response.Header().Set("Access-Control-Allow-Headers", "Accept, Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization")
 	if hash == "" {
+		fmt.Println("Bad request")
 		response.WriteHeader(http.StatusBadRequest)
 		return
 	} else {
+		fmt.Println("Pin file with hash: "+hash)
 		message := []string{"pin", hash}
 		server.sendingChannel <- message
+		fmt.Println("Message passed to hub")
 		results := <-server.recivingChannel
+		fmt.Println("Message recieved from hub")
 		response.Write([]byte(results[1]))
 	}
 }
@@ -53,9 +57,12 @@ func (server *apiServer) unpinFile(response http.ResponseWriter, request *http.R
 	if hash == "" {
 		response.WriteHeader(http.StatusBadRequest)
 	} else {
+		fmt.Println("Unpin file with hash: "+hash)
 		message := []string{"unpin", hash}
 		server.sendingChannel <- message
+		fmt.Println("Message passed to hub")
 		results := <-server.recivingChannel
+		fmt.Println("Message recieved from hub")
 		response.Write([]byte(results[1]))
 	}
 }

@@ -81,7 +81,7 @@ var firstAlphaRecipients map[string]*expectedRecipient = make(map[string]*expect
 var finalKRecipients map[string]*expectedRecipient = make(map[string]*expectedRecipient)
 
 //Base test for LookupContact
-func lookUpTestInitalSetup(target d7024e.Contact, t *testing.T, kadem *kademlia, rt *routingTable.RoutingTable) *[]testNetworkControl {
+func lookUpTestInitalSetup(target d7024e.Contact, t *testing.T, kadem *Kademlia, rt *routingTable.RoutingTable) *[]testNetworkControl {
 
 	startingContacts := []d7024e.Contact{
 		d7024e.NewContact(d7024e.NewKademliaID("FFFFFFFFF0000000000000000000000000000001"), "localhost:8001"),
@@ -525,7 +525,9 @@ func TestFindValue(t *testing.T) {
 
 	var storeRecipient string
 
-	fetchURL := "localhost:8001/storage/FFFFFFFFF0000000000000000000000000000000"
+	urlTail := "/storage/FFFFFFFFF0000000000000000000000000000000"
+	var fetchURL1 string
+	var fetchURL2 string
 
 	cList := []testNetworkControl{
 		testNetworkControl{ //First reponse
@@ -542,6 +544,8 @@ func TestFindValue(t *testing.T) {
 
 				firstResponse := rpc.Message{rpc.HAS_VALUE, msg.RpcId, *firstAlphaRecipients[addr].recipientId, []byte{byte(0)}}
 				byteMsg, _ := json.Marshal(firstResponse)
+
+				fetchURL1 = addr+urlTail
 
 				kadem.HandleIncomingRPC(byteMsg, addr)
 			},
@@ -561,6 +565,8 @@ func TestFindValue(t *testing.T) {
 
 				firstResponse := rpc.Message{rpc.HAS_VALUE, msg.RpcId, *firstAlphaRecipients[addr].recipientId, []byte{byte(0)}}
 				byteMsg, _ := json.Marshal(firstResponse)
+
+				fetchURL2 = addr+urlTail
 
 				kadem.HandleIncomingRPC(byteMsg, addr)
 			},
@@ -610,7 +616,9 @@ func TestFindValue(t *testing.T) {
 	}
 
 	fetchList := []testNetworkFetchControl{testNetworkFetchControl{func(url string, path string) {
-		assertEqual(t, url, fetchURL)
+		if url != fetchURL1 && url != fetchURL2 {
+			t.Fail()
+		}
 	},
 	},
 	}

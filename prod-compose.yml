@@ -6,6 +6,8 @@ services:
     tty: true
     working_dir: /kademlia/bin
     command: ./initialize 10000
+    ports:
+     - "80:80"
     networks:
       kademlia_network:
         ipv4_address: 172.16.238.10

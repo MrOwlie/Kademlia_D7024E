@@ -82,9 +82,9 @@ func main() {
 	// MBList := &messageBufferList.MessageBufferList{}
 	// MData := metadata.NewFileMetaData()
 	// var kadem = kademlia.NewKademliaObject(RTable, MBList, MData)
-
+	fmt.Println("Creting hub")
 	hub := newHub(iOwnPort)
-
+	fmt.Println("Hub created")
 	// net := network.NewNetwork(iOwnPort, "")
 	// net.SetHandler(kadem)
 	// kadem.SetNetworkHandler(net)
@@ -100,11 +100,13 @@ func main() {
 
 	APIChannels := &hubDuplex{make(chan []string), make(chan []string)}
 	ApiServer := serverd.NewAPIServer(APIChannels.outgoing, APIChannels.incoming)
-	ApiServer.ListenApiServer()
+	fmt.Println("Start listening API")
+	go ApiServer.ListenApiServer()
+	fmt.Println("Listening API")
 	hub.addConnector(APIChannels)
-
+	fmt.Println("Start listen hub")
 	hub.Listen()
-
+	fmt.Println("Listening to hub")
 	if performJoin {
 		CLIChannels.incoming <- []string{"join", ip, port}
 		response := <-CLIChannels.outgoing
@@ -276,6 +278,7 @@ func (h *hub) Listen() {
 				}
 
 			case command[0] == "pin":
+				fmt.Println("pin file with hash: "+command[1])
 				if h.KademliaInstance.PinFile(command[1]) {
 					response = []string{"success", "Pinned " + command[1]}
 				} else {
