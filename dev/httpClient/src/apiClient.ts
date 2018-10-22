@@ -62,7 +62,11 @@ function fetch() {
 function store() {
   let requestURL =  "http://" + hostURL.value + '/store'
   console.log(requestURL)
-  request(requestURL, 'post', form.value, function cb(status, res){
+  let sendFile = form.files[0]
+  var formData = new FormData()
+  formData.append('file', sendFile)
+  console.log(formData.get('file').toString())
+  request(requestURL, 'post', formData, function cb(status, res){
     if(status != 200){
       responseField.value = "FAILED"
     } else {
@@ -71,7 +75,7 @@ function store() {
   })
 }
 
-function request(url, method, file, callback) {
+function request(url, method, formData, callback) {
   let xhr = new XMLHttpRequest();
   xhr.timeout = 2000;
   xhr.onreadystatechange = function(e) {
@@ -87,11 +91,8 @@ function request(url, method, file, callback) {
     console.log("Timeout...")
   }
   xhr.open(method, url, true)
-  if(file != null){
-    let sendFile = form.files[0]
-    var formData = new FormData()
-    formData.append('file', sendFile)
-    xhr.setRequestHeader("Content-Type", "multipart/form-data")
+  if(formData != null){
+
     xhr.send(formData)
   }else {
     xhr.send();
