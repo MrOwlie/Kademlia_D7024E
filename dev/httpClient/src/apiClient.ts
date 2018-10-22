@@ -45,7 +45,7 @@ function unpin() {
 }
 
 function fetch() {
-  var requestURL = "http://" + hostURL.value + '/store';
+  let requestURL =  "http://" + hostURL.value + '/fetch?hash=' + fileHash.value
   console.log(requestURL)
   request(requestURL, 'get', null,  function cb(status, res){
     if(status != 200){
@@ -60,7 +60,7 @@ function fetch() {
 }
 
 function store() {
-  let requestURL =  "http://" + hostURL.value + '/pin?hash=' + fileHash.value
+  let requestURL =  "http://" + hostURL.value + '/store'
   console.log(requestURL)
   request(requestURL, 'post', file.value, function cb(status, res){
     if(status != 200){
