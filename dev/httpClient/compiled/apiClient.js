@@ -55,7 +55,7 @@ function fetch() {
     });
 }
 function store() {
-    var requestURL = "http://" + hostURL.value + '/pin?hash=' + fileHash.value;
+    var requestURL = "http://" + hostURL.value + '/store';
     console.log(requestURL);
     request(requestURL, 'post', file.value, function cb(status, res) {
         if (status == null) {
