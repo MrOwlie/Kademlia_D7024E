@@ -19,12 +19,10 @@ func (kademlia *Kademlia) scheduleMessageBufferListGarbageCollect() {
 		for {
 			select {
 			case <-ticker.C:
-				fmt.Println("Starting garbage collect...")
 				list := mbList.GarbageCollect()
 				for i := 0; i < len(list); i++ {
 					list[i].MessageChannel <- &rpc.Message{RpcType: rpc.TIME_OUT, RpcId: *list[i].RPCID, SenderId: *d7024e.NewRandomKademliaID(), RpcData: nil}
 				}
-				fmt.Println("Garbage collect finished")
 			}
 		}
 	}()
