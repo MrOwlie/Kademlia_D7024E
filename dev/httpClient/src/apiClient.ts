@@ -2,7 +2,7 @@
 //Input
 var hostURL = <HTMLInputElement>document.getElementById('hostURL')
 var fileHash = <HTMLInputElement>document.getElementById('fileHash')
-var file = <HTMLInputElement>document.getElementById('file')
+var form = <HTMLInputElement>document.getElementById('file')
 
 //Buttons
 var pinButton = <HTMLInputElement>document.getElementById('pin')
@@ -88,8 +88,11 @@ function request(url, method, file, callback) {
   }
   xhr.open(method, url, true)
   if(file != null){
+    let sendFile = file.files[0]
+    var formData = new FormData()
+    formData.append('file', file)
     xhr.setRequestHeader("Content-Type", "multipart/form-data")
-    xhr.send(file)
+    xhr.send(formData)
   }else {
     xhr.send();
   }
