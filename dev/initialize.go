@@ -270,6 +270,7 @@ func (h *hub) Listen() {
 				response = []string{"success", "Successfully stored file as " + filename}
 
 			case command[0] == "cat":
+				fmt.Println("cat command")
 				path, _, found := h.KademliaInstance.LookupData(command[1])
 				if found {
 					response = []string{"success", "Successfully downloaded file", path}

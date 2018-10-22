@@ -24,7 +24,7 @@ func (server *apiServer) ListenApiServer( /*int serverPort*/ ) {
 	mux.HandleFunc("/pin", server.pinFile)
 	mux.HandleFunc("/unpin", server.unpinFile)
 	mux.HandleFunc("/fetch", server.fetchFile)
-	mux.HandleFunc("/upload", server.uploadFile)
+	mux.HandleFunc("/store", server.uploadFile)
 
 	http.ListenAndServe(":80", mux)
 }
@@ -76,6 +76,7 @@ func (server *apiServer) fetchFile(response http.ResponseWriter, request *http.R
 		//Om ingen fil specificeras kan man kanske skicka tillbaka hashes för alla filer man har?
 		response.WriteHeader(http.StatusBadRequest)
 	} else {
+		fmt.Println("Trying to find file with hash: " + hash)
 		message := []string{"cat", hash}
 		server.sendingChannel <- message
 		results := <-server.recivingChannel

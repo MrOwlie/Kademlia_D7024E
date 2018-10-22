@@ -12,7 +12,7 @@ func TestFileRepublish(t *testing.T) {
 	expectedResult["FFFFFFFFF0000000000000000000000000000002"] = true
 	expectedResult["FFFFFFFFF0000000000000000000000000000003"] = true
 
-	metadata := GetInstance()
+	metadata := NewFileMetaData()
 
 	metadata.AddFile("filepath", "FFFFFFFFF0000000000000000000000000000001", true, time.Hour)
 	metadata.AddFile("filepath", "FFFFFFFFF0000000000000000000000000000002", true, time.Hour)
@@ -45,7 +45,7 @@ func TestFileDeletion(t *testing.T) {
 	expectedResult["filepath2"] = true
 	expectedResult["filepath3"] = true
 
-	metadata := GetInstance()
+	metadata := NewFileMetaData()
 	metadata.fileData = make(map[string]*MetaData)
 
 	metadata.AddFile("filepath1", "FFFFFFFFF0000000000000000000000000000001", false, time.Millisecond)
@@ -78,7 +78,7 @@ func TestFilePinning(t *testing.T) {
 	expectedResult["filepath2"] = true
 	expectedResult["filepath3"] = true
 
-	metadata := GetInstance()
+	metadata := NewFileMetaData()
 	metadata.fileData = make(map[string]*MetaData)
 
 	metadata.AddFile("filepath1", "FFFFFFFFF0000000000000000000000000000001", false, time.Millisecond)
@@ -109,7 +109,7 @@ func TestFileUnpinning(t *testing.T) {
 	expectedResult["filepath2"] = true
 	expectedResult["filepath3"] = true
 
-	metadata := GetInstance()
+	metadata := NewFileMetaData()
 	metadata.fileData = make(map[string]*MetaData)
 
 	metadata.AddFile("filepath1", "FFFFFFFFF0000000000000000000000000000001", true, 7*time.Second)
@@ -139,7 +139,7 @@ func TestFileRefresh(t *testing.T) {
 	expectedResult["FFFFFFFFF0000000000000000000000000000002"] = true
 	expectedResult["FFFFFFFFF0000000000000000000000000000003"] = true
 
-	metadata := GetInstance()
+	metadata := NewFileMetaData()
 	metadata.fileData = make(map[string]*MetaData)
 
 	metadata.AddFile("filepath", "FFFFFFFFF0000000000000000000000000000001", true, time.Hour)

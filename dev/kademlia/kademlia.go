@@ -342,8 +342,10 @@ func (kademlia *Kademlia) LookupContact(target *d7024e.KademliaID) (closest []d7
 }
 
 func (kademlia *Kademlia) LookupData(id string) (filePath string, closest []d7024e.Contact, fileWasFound bool) {
+	fmt.Println("Started lookUpData")
 	fileHash := d7024e.NewKademliaID(id)
 	closest, fileHost, fileWasFound := kademlia.lookupProcedure(procedureValue, fileHash)
+	fmt.Println("Procedure finished")
 	if fileWasFound {
 		url := fileHost.Address + "/storage/" + id
 		filePath = downLoadPath + "/" + id
