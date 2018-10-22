@@ -78,7 +78,7 @@ function store() {
 
 function request(url, method, formData, callback) {
   let xhr = new XMLHttpRequest();
-  xhr.timeout = 2000;
+  xhr.timeout = 30000;
   xhr.onreadystatechange = function(e) {
     if (xhr.readyState == 4) {
       if (xhr.status === 200) {
