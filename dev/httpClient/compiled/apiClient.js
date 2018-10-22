@@ -57,7 +57,7 @@ function fetch() {
 function store() {
     var requestURL = "http://" + hostURL.value + '/store';
     console.log(requestURL);
-    request(requestURL, 'post', file.value, function cb(status, res) {
+    request(requestURL, 'post', form.value, function cb(status, res) {
         if (status != 200) {
             responseField.value = "FAILED";
         }
