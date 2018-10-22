@@ -3,6 +3,7 @@
 var hostURL = document.getElementById('hostURL');
 var fileHash = document.getElementById('fileHash');
 var form = document.getElementById('fileForm');
+var file = document.getElementById('file');
 //Buttons
 var pinButton = document.getElementById('pin');
 var unpinButton = document.getElementById('unpin');
@@ -57,9 +58,8 @@ function fetch() {
 function store() {
     var requestURL = "http://" + hostURL.value + '/store';
     console.log(requestURL);
-    var sendFile = form.files[0];
-    var formData = new FormData();
-    formData.append('file', sendFile);
+    var formData = new FormData(form);
+    formData.append('file', file.toString());
     console.log(formData.get('file').toString());
     request(requestURL, 'post', formData, function cb(status, res) {
         if (status != 200) {
