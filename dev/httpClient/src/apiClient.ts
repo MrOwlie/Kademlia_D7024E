@@ -24,7 +24,7 @@ function pin() {
   let requestURL =  "http://" + hostURL.value + '/pin?hash=' + fileHash.value
   console.log(requestURL)
   request(requestURL, 'patch', null, function cb(status, res){
-    if(status == null){
+    if(status != 200){
       responseField.value = "FAILED"
     } else {
       responseField.value = res.body
@@ -35,8 +35,8 @@ function pin() {
 function unpin() {
   let requestURL =  "http://" + hostURL.value + '/unpin?hash=' + fileHash.value
   console.log(requestURL)
-  request(requestURL, 'patch', null,  function cb(status, res){
-    if(status == null){
+  request(requestURL, 'patch', null, function cb(status, res){
+    if(status != 200){
       responseField.value = "FAILED"
     } else {
       responseField.value = res.body
@@ -45,10 +45,10 @@ function unpin() {
 }
 
 function fetch() {
-  let requestURL =  "http://" + hostURL.value + '/fetch?hash=' + fileHash.value
+  var requestURL = "http://" + hostURL.value + '/store';
   console.log(requestURL)
   request(requestURL, 'get', null,  function cb(status, res){
-    if(status == null){
+    if(status != 200){
       responseField.value = "FAILED"
     } else if(res == null){
       console.log("No Response")
@@ -63,7 +63,7 @@ function store() {
   let requestURL =  "http://" + hostURL.value + '/pin?hash=' + fileHash.value
   console.log(requestURL)
   request(requestURL, 'post', file.value, function cb(status, res){
-    if(status == null){
+    if(status != 200){
       responseField.value = "FAILED"
     } else {
       responseField.value = res.body
@@ -77,9 +77,9 @@ function request(url, method, file, callback) {
   xhr.onreadystatechange = function(e) {
     if (xhr.readyState == 4) {
       if (xhr.status === 200) {
-        callback(null, xhr.response)
+        callback(xhr.status, xhr.response)
       } else {
-        callback(xhr.status, null)
+        callback(xhr.status, xhr.response)
       }
     }
   }
