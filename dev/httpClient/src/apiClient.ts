@@ -2,7 +2,8 @@
 //Input
 var hostURL = <HTMLInputElement>document.getElementById('hostURL')
 var fileHash = <HTMLInputElement>document.getElementById('fileHash')
-var form = <HTMLInputElement>document.getElementById('fileForm')
+var form = <HTMLFormElement>document.getElementById('fileForm')
+var file = <HTMLInputElement>document.getElementById('file')
 
 //Buttons
 var pinButton = <HTMLInputElement>document.getElementById('pin')
@@ -62,9 +63,9 @@ function fetch() {
 function store() {
   let requestURL =  "http://" + hostURL.value + '/store'
   console.log(requestURL)
-  let sendFile = form.files[0]
-  var formData = new FormData()
-  formData.append('file', sendFile)
+
+  var formData = new FormData(form)
+  formData.append('file', file.toString())
   console.log(formData.get('file').toString())
   request(requestURL, 'post', formData, function cb(status, res){
     if(status != 200){
