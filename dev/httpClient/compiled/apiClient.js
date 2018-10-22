@@ -2,7 +2,7 @@
 //Input
 var hostURL = document.getElementById('hostURL');
 var fileHash = document.getElementById('fileHash');
-var form = document.getElementById('file');
+var form = document.getElementById('fileForm');
 //Buttons
 var pinButton = document.getElementById('pin');
 var unpinButton = document.getElementById('unpin');
@@ -84,9 +84,9 @@ function request(url, method, file, callback) {
     };
     xhr.open(method, url, true);
     if (file != null) {
-        var sendFile = file.files[0];
+        var sendFile = form.files[0];
         var formData = new FormData();
-        formData.append('file', file);
+        formData.append('file', sendFile);
         xhr.setRequestHeader("Content-Type", "multipart/form-data");
         xhr.send(formData);
     }
