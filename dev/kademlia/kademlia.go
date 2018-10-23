@@ -55,7 +55,6 @@ func NewKademliaObject(RT *routingTable.RoutingTable, MBL *messageBufferList.Mes
 	storagePath, _ = filepath.Abs("../storage/")
 	downLoadPath, _ = filepath.Abs("../downloads/")
 
-	fmt.Println("Starting timed jobs")
 	instance.scheduleMessageBufferListGarbageCollect()
 	fmt.Println("RPC timeout garbage collection started!")
 	instance.scheduleIdleBucketReExploration()
@@ -64,7 +63,6 @@ func NewKademliaObject(RT *routingTable.RoutingTable, MBL *messageBufferList.Mes
 	fmt.Println("File republishing started!")
 	instance.scheduleCacheExpiredFileDeletion()
 	fmt.Println("Cache expired file deletion started!")
-	fmt.Println("All timed jobs started successfully!")
 	return instance
 }
 
@@ -109,7 +107,7 @@ func (kademlia *Kademlia) lookupProcedure(procedureType int, target *d7024e.Kade
 						go kademlia.lookupSubProcedure(contact, target, procedureType, ch)
 						queried = queried + 1
 						queriedAddresses[contact.Address] = true
-						fmt.Println("started query among alpha to number ", queried)
+
 					}
 				} else {
 					break
@@ -124,7 +122,7 @@ func (kademlia *Kademlia) lookupProcedure(procedureType int, target *d7024e.Kade
 				startIndex = len(chans) - alpha
 			}
 			for {
-				fmt.Println("started new waittime")
+
 				timeWaited := time.Since(startTime)
 				allowedTimeouts := int(timeWaited.Seconds()) / incrementalLimit
 
@@ -133,11 +131,9 @@ func (kademlia *Kademlia) lookupProcedure(procedureType int, target *d7024e.Kade
 					case x, ok := <-*chans[i]:
 						if ok {
 							if x.returnType == returnContacts {
-								fmt.Println("got back contacts")
 								for i, _ := range x.contacts {
 									x.contacts[i].CalcDistance(target)
 								}
-								fmt.Println("appending ", len(x.contacts))
 								candids.Append(x.contacts)
 							} else if x.returnType == returnHasValue {
 								x.contacts[0].CalcDistance(target)
@@ -172,7 +168,6 @@ func (kademlia *Kademlia) lookupProcedure(procedureType int, target *d7024e.Kade
 			}
 
 			//go trhough all channels, save responses and remove clsoed channels
-			fmt.Println("going through all channels")
 			for i := len(chans) - 1; i >= 0; i-- {
 				select {
 				case x, ok := <-*chans[i]:
@@ -216,7 +211,6 @@ func (kademlia *Kademlia) lookupProcedure(procedureType int, target *d7024e.Kade
 			candids.Append(distinctContacts)
 
 		} else { // last iteration gave no closer nodes, query all
-			fmt.Println("quering all")
 			queriedAll = true
 
 			//choose k closest nodes
@@ -231,13 +225,11 @@ func (kademlia *Kademlia) lookupProcedure(procedureType int, target *d7024e.Kade
 				if _, value := queriedAddresses[contact.Address]; !value {
 					ch := make(chan kademliaMessage)
 					chans = append(chans, &ch)
-					fmt.Println("quering ", contact.ID.String())
 					go kademlia.lookupSubProcedure(contact, target, procedureType, ch)
 				}
 			}
 
 			//wait for responses or time-outs for all open queries
-			fmt.Println("waiting for response from all")
 			for {
 				if len(chans) == 0 {
 					break
@@ -248,7 +240,6 @@ func (kademlia *Kademlia) lookupProcedure(procedureType int, target *d7024e.Kade
 					case x, ok := <-*chans[i]:
 						if ok {
 							if x.returnType == returnContacts {
-								fmt.Println("got response, ", i, " remaining")
 								for i, _ := range x.contacts {
 									x.contacts[i].CalcDistance(target)
 								}
@@ -284,7 +275,6 @@ func (kademlia *Kademlia) lookupProcedure(procedureType int, target *d7024e.Kade
 		}
 
 	}
-	fmt.Println("returning")
 	candids.RemoveContact(rTable.Me.ID)
 	candids.Sort()
 	distinctContacts := candids.GetDistinctContacts(valueK)
@@ -297,9 +287,7 @@ func (kademlia *Kademlia) lookupSubProcedure(target d7024e.Contact, toFind *d702
 	rpcID := d7024e.NewRandomKademliaID()
 	mBuffer := messageBufferList.NewMessageBuffer(rpcID)
 	mBufferList := kademlia.MBList
-	fmt.Println("Adding message to message buffer...")
 	mBufferList.AddMessageBuffer(mBuffer)
-	fmt.Println("Message added to message buffer")
 
 	//send different messages depending on type
 	if lookupType == procedureContacts {
@@ -316,21 +304,18 @@ func (kademlia *Kademlia) lookupSubProcedure(target d7024e.Contact, toFind *d702
 		var contacts rpc.ClosestNodes
 		json.Unmarshal(message.RpcData, &contacts)
 		retMessage := kademliaMessage{returnContacts, contacts.Closest}
-		fmt.Println("returning contacts ", len(contacts.Closest))
 		ch <- retMessage
 		close(ch)
 	} else if message.RpcType == rpc.HAS_VALUE {
 		//return target so main routine knows which contact has the file
 		contacts := []d7024e.Contact{target}
 		retMessage := kademliaMessage{returnHasValue, contacts}
-		fmt.Println("returning hasfile")
 		ch <- retMessage
 		close(ch)
 	} else {
 		//return target so main routine knows which contact has timed out
 		contacts := []d7024e.Contact{target}
 		retMessage := kademliaMessage{returnTimedOut, contacts}
-		fmt.Println("returning timed out")
 		ch <- retMessage
 		close(ch)
 	}
@@ -342,13 +327,11 @@ func (kademlia *Kademlia) LookupContact(target *d7024e.KademliaID) (closest []d7
 }
 
 func (kademlia *Kademlia) LookupData(id string) (filePath string, closest []d7024e.Contact, fileWasFound bool) {
-	fmt.Println("Started lookUpData")
 	fileHash := d7024e.NewKademliaID(id)
-	if kademlia.MetaData.HasFile(id){
+	if kademlia.MetaData.HasFile(id) {
 		return storagePath + "/" + id, nil, true
 	}
 	closest, fileHost, fileWasFound := kademlia.lookupProcedure(procedureValue, fileHash)
-	fmt.Println("Procedure finished")
 	if fileWasFound {
 		url := fileHost.Address + "/storage/" + id
 		filePath = downLoadPath + "/" + id
@@ -362,13 +345,11 @@ func (kademlia *Kademlia) LookupData(id string) (filePath string, closest []d702
 
 func (kademlia *Kademlia) StoreFile(filePath string) string {
 	file, err := os.Open(filePath)
-	fmt.Println()
 	defer file.Close()
 	if err != nil {
 		fmt.Println(err)
 		return ""
 	}
-	fmt.Println("opened file ", filePath)
 
 	h := sha1.New()
 	_, err = io.Copy(h, file)
@@ -378,11 +359,9 @@ func (kademlia *Kademlia) StoreFile(filePath string) string {
 	}
 	file.Seek(0, 0)
 
-	fmt.Println("hashed file")
-
 	hash := h.Sum(nil)
 	newFileName := hex.EncodeToString(hash)
-	if kademlia.MetaData.HasFile(newFileName){
+	if kademlia.MetaData.HasFile(newFileName) {
 		return newFileName
 	}
 
@@ -396,32 +375,24 @@ func (kademlia *Kademlia) StoreFile(filePath string) string {
 
 	_, wrierr := io.Copy(destination, file)
 	io.Copy(os.Stdout, file)
-	//fmt.Println(bytes, " bytes copied")
 	if wrierr != nil {
 		fmt.Println(wrierr)
 		return ""
 	}
 
-	fmt.Println("copied file")
-
 	kademliaHash := d7024e.NewKademliaID(newFileName)
-	fmt.Println("metadata")
 	kademlia.MetaData.AddFile(newPath, newFileName, true, kademlia.calcTimeToLive(kademliaHash))
 
-	fmt.Println("getting closest nodes")
 	closest, _, _ := kademlia.lookupProcedure(procedureContacts, kademliaHash)
 
 	for _, c := range closest {
-		fmt.Println("sending store to ", c.ID.String())
 		kademlia.sendStoreMessage(&c, d7024e.NewRandomKademliaID(), kademliaHash, rpc.SENDER)
 	}
-	fmt.Println("Sent store RPC")
 	return newFileName
 }
 
 func (kademlia *Kademlia) Join(ip string, port int) bool {
 	rt := kademlia.routingTable
-	fmt.Println(fmt.Sprintf("joining %q on port %d", ip, port))
 	bootstrapContact := d7024e.NewContact(d7024e.NewRandomKademliaID(), fmt.Sprintf("%s:%d", ip, port))
 
 	retry := 1
@@ -430,7 +401,6 @@ func (kademlia *Kademlia) Join(ip string, port int) bool {
 		mBuffer := messageBufferList.NewMessageBuffer(rpcID)
 		mBufferList := kademlia.MBList
 		mBufferList.AddMessageBuffer(mBuffer)
-		fmt.Println("Trying to connect. Try number ", retry)
 		kademlia.sendFindContactMessage(&bootstrapContact, rt.Me.ID, rpcID)
 
 		//wait until a response is
@@ -440,9 +410,7 @@ func (kademlia *Kademlia) Join(ip string, port int) bool {
 
 			var contacts rpc.ClosestNodes = rpc.ClosestNodes{}
 			json.Unmarshal(message.RpcData, &contacts)
-			fmt.Println("adding contacts ", len(contacts.Closest))
 			for _, contact := range contacts.Closest {
-				fmt.Printf("Added contact with ID:%v and with addres:%v\n", contact.ID.String(), contact.Address)
 				kademlia.addContact(&contact)
 			}
 			return true
@@ -450,7 +418,6 @@ func (kademlia *Kademlia) Join(ip string, port int) bool {
 		rpcID = d7024e.NewRandomKademliaID()
 		retry++
 	}
-	fmt.Printf("Failed to join network after three tries. Please try to connect to another node.")
 	return false
 
 }
@@ -473,17 +440,12 @@ func (kademlia *Kademlia) addContact(contact *d7024e.Contact) {
 
 				kademlia.sendPingMessage(iPingContact, rpcID)
 
-				fmt.Println("sent ping message from bucket")
-
 				message := <-mBuffer.MessageChannel
-				fmt.Println("ping executed")
 
 				if message.RpcType == rpc.PONG {
-					fmt.Println("ping responded successfully, node alive.")
 					rt.AddContact(*iPingContact)
 					return
 				} else {
-					fmt.Println("ping without response, node dead.")
 					iPingContact, iInserted = rt.ReplaceLastSeenNode(*iPingContact, *iContact)
 					if iInserted {
 

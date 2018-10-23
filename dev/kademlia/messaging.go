@@ -11,7 +11,6 @@ import (
 //var storagePath string = "What ever the storage path is" //TODO fix this
 
 func (kademlia *Kademlia) HandleIncomingRPC(data []byte, addr string) {
-	//fmt.Println("msg ", string(data))
 	var message rpc.Message = rpc.Message{}
 	unmarshaling_err := json.Unmarshal(data, &message)
 	if unmarshaling_err != nil {
@@ -21,7 +20,6 @@ func (kademlia *Kademlia) HandleIncomingRPC(data []byte, addr string) {
 	//Update contact
 	con := d7024e.NewContact(&message.SenderId, addr)
 	kademlia.addContact(&con)
-	fmt.Println("adding contact ", addr, " ", &message.SenderId)
 	switch message.RpcType {
 
 	case rpc.FIND_NODE:
@@ -51,11 +49,7 @@ func (kademlia *Kademlia) HandleIncomingRPC(data []byte, addr string) {
 			m_buffer, hasId := buffer_list.GetMessageBuffer(&message.RpcId)
 			if hasId {
 				m_buffer.AppendMessage(&message)
-			} else {
-				fmt.Printf("Message with rpc id: %v was discarded", message.RpcId)
 			}
-		} else {
-			fmt.Println("Invalid message")
 		}
 	}
 }
@@ -68,8 +62,6 @@ func (kademlia *Kademlia) handleFindNode(rpc_id d7024e.KademliaID, find_node rpc
 	if err != nil {
 		fmt.Println(err)
 	}
-
-	fmt.Println("sending closest contacts ", len(closest_nodes.Closest))
 
 	kademlia.network.SendMessage(addr, &response)
 }
@@ -93,16 +85,13 @@ func (kademlia *Kademlia) handleFindValue(rpc_id d7024e.KademliaID, find_node rp
 	var response []byte
 	var err error
 
-	fmt.Println(hash)
 	if metadata.HasFile(hash) {
-		fmt.Println("found file")
 		response, err = json.Marshal(rpc.Message{rpc.HAS_VALUE, rpc_id, *rt.Me.ID, []byte{byte(0)}})
 
 		if err != nil {
 			fmt.Println(err)
 		}
 	} else {
-		fmt.Println("did not find file")
 		closest_nodes := rpc.ClosestNodes{rt.FindClosestContacts(&find_node.NodeId, 20)}
 		response, err = rpc.Marshal(rpc.CLOSEST_NODES, rpc_id, *rt.Me.ID, closest_nodes)
 
@@ -149,11 +138,6 @@ func (kademlia *Kademlia) sendPingMessage(contact *d7024e.Contact, rpc_id *d7024
 		return
 	}
 
-	/*addr, addr_err := net.ResolveUDPAddr("udp", contact.Address)
-	if addr_err != nil {
-		fmt.Println(addr_err)
-	}*/
-
 	kademlia.network.SendMessage(contact.Address, &data)
 }
 
@@ -164,11 +148,6 @@ func (kademlia *Kademlia) sendFindContactMessage(contact *d7024e.Contact, toFind
 		fmt.Println(err)
 	}
 
-	/*addr, addr_err := net.ResolveUDPAddr("udp", contact.Address)
-	if addr_err != nil {
-		fmt.Println(addr_err)
-	}*/
-
 	kademlia.network.SendMessage(contact.Address, &data)
 }
 
@@ -178,11 +157,6 @@ func (kademlia *Kademlia) sendFindDataMessage(contact *d7024e.Contact, toFind *d
 	if err != nil {
 		fmt.Println(err)
 	}
-
-	/*addr, addr_err := net.ResolveUDPAddr("udp", contact.Address)
-	if addr_err != nil {
-		fmt.Println(addr_err)
-	}*/
 
 	kademlia.network.SendMessage(contact.Address, &data)
 }

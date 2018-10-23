@@ -1,7 +1,6 @@
 package kademlia
 
 import (
-	"fmt"
 	"os"
 	"time"
 
@@ -65,7 +64,6 @@ func (kademlia *Kademlia) scheduleFileRepublish() {
 func (kademlia *Kademlia) republishFiles() {
 	metaData := kademlia.MetaData
 	fileHashes := metaData.FilesToRepublish(republishInterval)
-	fmt.Println("Repub")
 	for _, hash := range fileHashes {
 		kademliaHash := d7024e.NewKademliaID(hash)
 		closest := kademlia.LookupContact(kademliaHash)

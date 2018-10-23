@@ -31,19 +31,15 @@ func (server *apiServer) ListenApiServer( /*int serverPort*/ ) {
 func (server *apiServer) pinFile(response http.ResponseWriter, request *http.Request) {
 	hash := request.FormValue("hash")
 	response.Header().Set("Access-Control-Allow-Origin", "*")
-    response.Header().Set("Access-Control-Allow-Methods", "POST, GET, PATCH")
-    response.Header().Set("Access-Control-Allow-Headers", "Accept, Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization")
+	response.Header().Set("Access-Control-Allow-Methods", "POST, GET, PATCH")
+	response.Header().Set("Access-Control-Allow-Headers", "Accept, Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization")
 	if hash == "" {
-		fmt.Println("Bad request")
 		response.WriteHeader(http.StatusBadRequest)
 		return
 	} else {
-		fmt.Println("Pin file with hash: "+hash)
 		message := []string{"pin", hash}
 		server.sendingChannel <- message
-		fmt.Println("Message passed to hub")
 		results := <-server.recivingChannel
-		fmt.Println("Message recieved from hub")
 		response.Write([]byte(results[1]))
 	}
 }
@@ -51,17 +47,14 @@ func (server *apiServer) pinFile(response http.ResponseWriter, request *http.Req
 func (server *apiServer) unpinFile(response http.ResponseWriter, request *http.Request) {
 	hash := request.FormValue("hash")
 	response.Header().Set("Access-Control-Allow-Origin", "*")
-    response.Header().Set("Access-Control-Allow-Methods", "POST, GET, PATCH")
-    response.Header().Set("Access-Control-Allow-Headers", "Accept, Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization")
+	response.Header().Set("Access-Control-Allow-Methods", "POST, GET, PATCH")
+	response.Header().Set("Access-Control-Allow-Headers", "Accept, Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization")
 	if hash == "" {
 		response.WriteHeader(http.StatusBadRequest)
 	} else {
-		fmt.Println("Unpin file with hash: "+hash)
 		message := []string{"unpin", hash}
 		server.sendingChannel <- message
-		fmt.Println("Message passed to hub")
 		results := <-server.recivingChannel
-		fmt.Println("Message recieved from hub")
 		response.Write([]byte(results[1]))
 	}
 }
@@ -69,27 +62,26 @@ func (server *apiServer) unpinFile(response http.ResponseWriter, request *http.R
 func (server *apiServer) fetchFile(response http.ResponseWriter, request *http.Request) {
 	hash := request.FormValue("hash")
 	response.Header().Set("Access-Control-Allow-Origin", "*")
-    response.Header().Set("Access-Control-Allow-Methods", "POST, GET, PATCH")
-    response.Header().Set("Access-Control-Allow-Headers", "Accept, Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization")
+	response.Header().Set("Access-Control-Allow-Methods", "POST, GET, PATCH")
+	response.Header().Set("Access-Control-Allow-Headers", "Accept, Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization")
 	if hash == "" {
 		//Om ingen fil specificeras kan man kanske skicka tillbaka hashes för alla filer man har?
 		response.WriteHeader(http.StatusBadRequest)
 	} else {
-		fmt.Println("Trying to find file with hash: " + hash)
 		message := []string{"cat", hash}
 		server.sendingChannel <- message
-		fmt.Println("cat message delivered")
 		results := <-server.recivingChannel
 		if results[0] == "fail" {
 			response.WriteHeader(http.StatusNotFound)
 		} else {
-			fmt.Println("File path: "+results[2])
 			file, err := os.Open(results[2])
 			if err != nil {
 				fmt.Println(err)
 				response.WriteHeader(http.StatusInternalServerError)
 				return
 			}
+			response.Header().Set("Content-Disposition", "attachment; filename="+hash)
+			response.Header().Set("Content-Type", "multipart/form-data")
 			_, err = io.Copy(response, file)
 			if err != nil {
 				fmt.Println(err)
@@ -101,10 +93,10 @@ func (server *apiServer) fetchFile(response http.ResponseWriter, request *http.R
 
 func (server *apiServer) uploadFile(response http.ResponseWriter, request *http.Request) {
 	response.Header().Set("Access-Control-Allow-Origin", "*")
-    response.Header().Set("Access-Control-Allow-Methods", "POST, GET, PATCH")
+	response.Header().Set("Access-Control-Allow-Methods", "POST, GET, PATCH")
 	response.Header().Set("Access-Control-Allow-Headers", "Accept, Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization")
 	file, fileHeader, err := request.FormFile("file")
-	if err != nil{
+	if err != nil {
 		fmt.Println(err)
 		response.WriteHeader(http.StatusBadRequest)
 		return
@@ -115,12 +107,12 @@ func (server *apiServer) uploadFile(response http.ResponseWriter, request *http.
 			response.WriteHeader(http.StatusBadRequest)
 			return
 		}
-		newFile, err := os.Create(basePath +"/"+fileHeader.Filename)
+		newFile, err := os.Create(basePath + "/" + fileHeader.Filename)
 		io.Copy(newFile, file)
 		message := []string{"store", newFile.Name()}
 
 		server.sendingChannel <- message
 		results := <-server.recivingChannel
-		response.Write([]byte(results[1]))		
-	}	
+		response.Write([]byte(results[1]))
+	}
 }

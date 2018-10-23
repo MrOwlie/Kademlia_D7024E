@@ -78,35 +78,18 @@ func main() {
 		os.Mkdir(downloadPath, 0766)
 	}
 
-	// RTable := routingTable.NewRoutingTable()
-	// MBList := &messageBufferList.MessageBufferList{}
-	// MData := metadata.NewFileMetaData()
-	// var kadem = kademlia.NewKademliaObject(RTable, MBList, MData)
-	fmt.Println("Creting hub")
 	hub := newHub(iOwnPort)
-	fmt.Println("Hub created")
-	// net := network.NewNetwork(iOwnPort, "")
-	// net.SetHandler(kadem)
-	// kadem.SetNetworkHandler(net)
-
-	// var wgl sync.WaitGroup
-	// wgl.Add(1)
-	// go net.Listen(&wgl)
-	// go net.ListenFileServer()
-	// wgl.Wait()
 
 	CLIChannels := &hubDuplex{make(chan []string), make(chan []string)}
 	hub.addConnector(CLIChannels)
+	fmt.Println("Listening to commands from CLI")
 
 	APIChannels := &hubDuplex{make(chan []string), make(chan []string)}
 	ApiServer := serverd.NewAPIServer(APIChannels.outgoing, APIChannels.incoming)
-	fmt.Println("Start listening API")
 	go ApiServer.ListenApiServer()
-	fmt.Println("Listening API")
 	hub.addConnector(APIChannels)
-	fmt.Println("Start listen hub")
+	fmt.Println("Listening to commands from API")
 	hub.Listen()
-	fmt.Println("Listening to hub")
 	if performJoin {
 		CLIChannels.incoming <- []string{"join", ip, port}
 		response := <-CLIChannels.outgoing
@@ -139,23 +122,14 @@ func main() {
 				fmt.Println("\"exit\" to exit the application.")
 			case action == "exit":
 				CLIExit.Done()
+
 			case action == "store":
 				path, _ := filepath.Abs(param1)
-				/*_, err := ioutil.ReadFile(path)
-				if err != nil {
-					fmt.Println("An error occured while reading the file!")
-				} else {*/
-				//kadem.StoreFile(path)
 				CLIChannels.incoming <- []string{"store", path}
 				response := <-CLIChannels.outgoing
 				fmt.Println(response[1])
-				//}
+
 			case action == "cat":
-				// _, closest, _ := kadem.LookupData(param1)
-				// fmt.Println("Nodes found :", len(closest))
-				// for _, c := range closest {
-				// 	fmt.Println(c.ID)
-				// }
 				CLIChannels.incoming <- []string{"cat", param1}
 				response := <-CLIChannels.outgoing
 				fmt.Println(response[1])
@@ -257,7 +231,7 @@ func (h *hub) Listen() {
 
 	for i := 0; i < len(h.Connectors); i++ {
 		go func(a int) {
-			for{
+			for {
 				command := <-h.Connectors[a].incoming
 				mergeChan <- hubMessage{command, h.Connectors[a]}
 			}
@@ -266,59 +240,67 @@ func (h *hub) Listen() {
 
 	go func() {
 		for {
-			//fmt.Println("Waiting for message ...")
-			//message := <-mergeChan
-			//fmt.Println("Message recieved!")
-			for message:= range mergeChan {
+			for message := range mergeChan {
 
-			command := message.command
-			fmt.Println(command)
-			var response []string
+				command := message.command
+				var response []string
 
-			switch {
-			case command[0] == "join":
-				iPort, _ := strconv.Atoi(command[2])
-				joined := h.KademliaInstance.Join(command[1], iPort)
-				if joined {
-					response = []string{"success", "Successfully joined " + command[1]}
-				} else {
-					response = []string{"fail", "Join attempt towards " + command[1] + " timed out"}
+				switch {
+				case command[0] == "join":
+					iPort, _ := strconv.Atoi(command[2])
+					fmt.Println("Attempting to join network via ", command[1], ":", iPort)
+					joined := h.KademliaInstance.Join(command[1], iPort)
+					if joined {
+						response = []string{"success", "Successfully joined " + command[1]}
+					} else {
+						response = []string{"fail", "Join attempt towards " + command[1] + " timed out"}
+					}
+					fmt.Println("Join attempt ended")
+
+				case command[0] == "store":
+					fmt.Println("Attempting to store file on network")
+					filename := h.KademliaInstance.StoreFile(command[1])
+					if len(filename) > 0 {
+						response = []string{"success", "Successfully stored file as " + filename}
+					} else {
+						response = []string{"fail", "Storing file failed"}
+					}
+					fmt.Println("Store attempt ended")
+
+				case command[0] == "cat":
+					fmt.Println("Attempting to fetch file ", command[1])
+					path, _, found := h.KademliaInstance.LookupData(command[1])
+					if found {
+						response = []string{"success", "Successfully downloaded file", path}
+					} else {
+						response = []string{"fail", "File was not found"}
+					}
+					fmt.Println("Fetch attempt ended")
+
+				case command[0] == "pin":
+					fmt.Println("Attempting to pin file ", command[1])
+					if h.KademliaInstance.PinFile(command[1]) {
+						response = []string{"success", "Pinned " + command[1]}
+					} else {
+						response = []string{"fail", "File was not found"}
+					}
+					fmt.Println("Pin attempt ended")
+
+				case command[0] == "unpin":
+					fmt.Println("Attempting to unpin file ", command[1])
+					if h.KademliaInstance.PinFile(command[1]) {
+						response = []string{"success", "Unpinned " + command[1]}
+					} else {
+						response = []string{"fail", "File was not found"}
+					}
+					fmt.Println("Unpin attempt ended")
+
+				default:
+					response = []string{"fail", "The command was unrecognized"}
 				}
 
-			case command[0] == "store":
-				filename := h.KademliaInstance.StoreFile(command[1])
-				response = []string{"success", "Successfully stored file as " + filename}
-
-			case command[0] == "cat":
-				fmt.Println("cat command")
-				path, _, found := h.KademliaInstance.LookupData(command[1])
-				if found {
-					response = []string{"success", "Successfully downloaded file", path}
-				} else {
-					response = []string{"fail", "File was not found"}
-				}
-
-			case command[0] == "pin":
-				fmt.Println("pin file with hash: "+command[1])
-				if h.KademliaInstance.PinFile(command[1]) {
-					response = []string{"success", "Pinned " + command[1]}
-				} else {
-					response = []string{"fail", "File was not found"}
-				}
-
-			case command[0] == "unpin":
-				if h.KademliaInstance.PinFile(command[1]) {
-					response = []string{"success", "Unpinned " + command[1]}
-				} else {
-					response = []string{"fail", "File was not found"}
-				}
-
-			default:
-				response = []string{"fail", "The command was unrecognized"}
+				message.Connector.outgoing <- response
 			}
-
-			message.Connector.outgoing <- response
-		}
 		}
 	}()
 }

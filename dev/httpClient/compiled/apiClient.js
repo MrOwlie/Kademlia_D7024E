@@ -41,8 +41,8 @@ function unpin() {
 }
 function fetch() {
     var requestURL = "http://" + hostURL.value + '/fetch?hash=' + fileHash.value;
-    console.log(requestURL);
-    request(requestURL, 'get', null, function cb(status, res) {
+    window.open(requestURL);
+   /* request(requestURL, 'get', null, function cb(status, res) {
         if (status != 200) {
             responseField.value = "FAILED";
         }
@@ -53,7 +53,7 @@ function fetch() {
             console.log(res);
             responseField.value = res;
         }
-    });
+    });*/
 }
 function store() {
     var requestURL = "http://" + hostURL.value + '/store';

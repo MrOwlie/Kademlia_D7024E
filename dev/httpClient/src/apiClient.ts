@@ -47,7 +47,8 @@ function unpin() {
 
 function fetch() {
   let requestURL =  "http://" + hostURL.value + '/fetch?hash=' + fileHash.value
-  console.log(requestURL)
+  <HTMLInputElement>window.open(requestURL)
+  /*console.log(requestURL)
   request(requestURL, 'get', null,  function cb(status, res){
     if(status != 200){
       responseField.value = "FAILED"
@@ -57,7 +58,7 @@ function fetch() {
       console.log(res)
       responseField.value = res
     }
-  })
+  })*/
 }
 
 function store() {

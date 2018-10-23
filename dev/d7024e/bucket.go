@@ -28,7 +28,6 @@ func NewBucket() *Bucket {
 // AddContact adds the Contact to the front of the bucket
 // or moves it to the front of the bucket if it already existed
 func (bucket *Bucket) AddContact(contact Contact) (*Contact, bool) {
-	//fmt.Println("contact added: ", contact)
 	var element *list.Element
 	bucket.mutex.Lock()
 	defer bucket.mutex.Unlock()
@@ -57,7 +56,6 @@ func (bucket *Bucket) AddContact(contact Contact) (*Contact, bool) {
 
 // PopAndAppend forcefully removes the front contact and appends a new one
 func (bucket *Bucket) PopAndAppend(old Contact, new Contact) (*Contact, bool) {
-	//fmt.Println("contact added: ", contact)
 	bucket.mutex.Lock()
 	defer bucket.mutex.Unlock()
 

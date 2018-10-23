@@ -51,7 +51,6 @@ func (mbList *MessageBufferList) GarbageCollect() []*messageBuffer {
 	for i := len(mbList.list) - 1; i >= 0; i-- {
 		if mbList.list[i].hasExpired() {
 			expired = append(expired, mbList.list[i])
-			//mbList.list[i].MessageChannel <- &rpc.Message{RpcType: rpc.TIME_OUT, RpcId: *mbList.list[i].RPCID, SenderId: *d7024e.NewRandomKademliaID(), RpcData: nil}
 			if i < len(mbList.list)-1 {
 				copy(mbList.list[i:], mbList.list[i+1:])
 			}
@@ -64,7 +63,6 @@ func (mbList *MessageBufferList) GarbageCollect() []*messageBuffer {
 	//make sure no message has been appended during the extraction
 	for i := len(expired) - 1; i >= 0; i-- {
 		if !expired[i].hasExpired() {
-			//mbList.list[i].MessageChannel <- &rpc.Message{RpcType: rpc.TIME_OUT, RpcId: *mbList.list[i].RPCID, SenderId: *d7024e.NewRandomKademliaID(), RpcData: nil}
 			if i < len(expired)-1 {
 				copy(expired[i:], expired[i+1:])
 			}
