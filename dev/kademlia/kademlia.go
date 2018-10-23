@@ -344,6 +344,9 @@ func (kademlia *Kademlia) LookupContact(target *d7024e.KademliaID) (closest []d7
 func (kademlia *Kademlia) LookupData(id string) (filePath string, closest []d7024e.Contact, fileWasFound bool) {
 	fmt.Println("Started lookUpData")
 	fileHash := d7024e.NewKademliaID(id)
+	if kademlia.MetaData.HasFile(id){
+		return storagePath + "/" + id, nil, true
+	}
 	closest, fileHost, fileWasFound := kademlia.lookupProcedure(procedureValue, fileHash)
 	fmt.Println("Procedure finished")
 	if fileWasFound {
@@ -379,6 +382,10 @@ func (kademlia *Kademlia) StoreFile(filePath string) string {
 
 	hash := h.Sum(nil)
 	newFileName := hex.EncodeToString(hash)
+	if kademlia.MetaData.HasFile(newFileName){
+		return newFileName
+	}
+
 	newPath := storagePath + "/" + newFileName
 	destination, deserr := os.Create(newPath)
 	defer destination.Close()

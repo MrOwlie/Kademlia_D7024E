@@ -58,8 +58,8 @@ function fetch() {
 function store() {
     var requestURL = "http://" + hostURL.value + '/store';
     console.log(requestURL);
-    var formData = new FormData(form);
-    formData.append('file', file.files[0]);
+    var form1 = document.getElementById('file');
+    var formData = new FormData(form1);
     request(requestURL, 'post', formData, function cb(status, res) {
         if (status != 200) {
             responseField.value = "FAILED";

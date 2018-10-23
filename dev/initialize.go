@@ -134,6 +134,8 @@ func main() {
 				fmt.Println("Available commands:")
 				fmt.Println("\"store 'filepath'\" to store a file.")
 				fmt.Println("\"cat 'key-value'\" to fetch a file.")
+				fmt.Println("\"pin\" 'key-value'\" to pin a file.")
+				fmt.Println("\"unpin\" 'key-value'\" to unpin a file.")
 				fmt.Println("\"exit\" to exit the application.")
 			case action == "exit":
 				CLIExit.Done()
@@ -157,6 +159,17 @@ func main() {
 				CLIChannels.incoming <- []string{"cat", param1}
 				response := <-CLIChannels.outgoing
 				fmt.Println(response[1])
+
+			case action == "pin":
+				CLIChannels.incoming <- []string{"pin", param1}
+				response := <-CLIChannels.outgoing
+				fmt.Println(response[1])
+
+			case action == "unpin":
+				CLIChannels.incoming <- []string{"unpin", param1}
+				response := <-CLIChannels.outgoing
+				fmt.Println(response[1])
+
 			default:
 				fmt.Println("The command entered is invalid, try again.")
 			}
@@ -244,15 +257,22 @@ func (h *hub) Listen() {
 
 	for i := 0; i < len(h.Connectors); i++ {
 		go func(a int) {
-			command := <-h.Connectors[a].incoming
-			mergeChan <- hubMessage{command, h.Connectors[a]}
+			for{
+				command := <-h.Connectors[a].incoming
+				mergeChan <- hubMessage{command, h.Connectors[a]}
+			}
 		}(i)
 	}
 
 	go func() {
 		for {
-			message := <-mergeChan
+			//fmt.Println("Waiting for message ...")
+			//message := <-mergeChan
+			//fmt.Println("Message recieved!")
+			for message:= range mergeChan {
+
 			command := message.command
+			fmt.Println(command)
 			var response []string
 
 			switch {
@@ -298,6 +318,7 @@ func (h *hub) Listen() {
 			}
 
 			message.Connector.outgoing <- response
+		}
 		}
 	}()
 }

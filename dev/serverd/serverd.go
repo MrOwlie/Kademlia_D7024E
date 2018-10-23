@@ -3,7 +3,6 @@ package serverd
 import (
 	"fmt"
 	"io"
-	"math"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -79,39 +78,44 @@ func (server *apiServer) fetchFile(response http.ResponseWriter, request *http.R
 		fmt.Println("Trying to find file with hash: " + hash)
 		message := []string{"cat", hash}
 		server.sendingChannel <- message
+		fmt.Println("cat message delivered")
 		results := <-server.recivingChannel
 		if results[0] == "fail" {
 			response.WriteHeader(http.StatusNotFound)
 		} else {
+			fmt.Println("File path: "+results[2])
 			file, err := os.Open(results[2])
 			if err != nil {
 				fmt.Println(err)
 				response.WriteHeader(http.StatusInternalServerError)
 				return
 			}
-			io.Copy(response, file)
+			_, err = io.Copy(response, file)
+			if err != nil {
+				fmt.Println(err)
+				response.WriteHeader(http.StatusInternalServerError)
+			}
 		}
 	}
 }
 
 func (server *apiServer) uploadFile(response http.ResponseWriter, request *http.Request) {
-	err := request.ParseMultipartForm(math.MaxInt64)
 	response.Header().Set("Access-Control-Allow-Origin", "*")
     response.Header().Set("Access-Control-Allow-Methods", "POST, GET, PATCH")
-    response.Header().Set("Access-Control-Allow-Headers", "Accept, Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization")
+	response.Header().Set("Access-Control-Allow-Headers", "Accept, Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization")
+	file, fileHeader, err := request.FormFile("file")
 	if err != nil{
 		fmt.Println(err)
 		response.WriteHeader(http.StatusBadRequest)
+		return
 	} else {
 		basePath, err := filepath.Abs("../downloads/")
-		fileHeader := request.MultipartForm.File["file"]
-		file, err := fileHeader[0].Open()
 		if err != nil {
 			fmt.Println(err)
 			response.WriteHeader(http.StatusBadRequest)
 			return
 		}
-		newFile, err := os.Create(basePath + fileHeader[0].Filename)
+		newFile, err := os.Create(basePath +"/"+fileHeader.Filename)
 		io.Copy(newFile, file)
 		message := []string{"store", newFile.Name()}
 
