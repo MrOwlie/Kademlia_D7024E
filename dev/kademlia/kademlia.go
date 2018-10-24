@@ -13,7 +13,6 @@ import (
 
 	"../d7024e"
 	"../messageBufferList"
-	"../metadata"
 	"../routingTable"
 	"../rpc"
 )
@@ -27,7 +26,7 @@ type Kademlia struct {
 	network      NetworkHandler
 	routingTable *routingTable.RoutingTable
 	MBList       *messageBufferList.MessageBufferList
-	MetaData     *metadata.FileMetaData
+	MetaData     FileMetaData
 }
 
 type kademliaMessage struct {
@@ -39,7 +38,7 @@ var storagePath string
 var downLoadPath string
 
 var maxTTL float64 = float64(24 * time.Hour)
-var coefficentTTL float64 = maxTTL / math.Exp(160)
+var coefficentTTL float64 = maxTTL / math.Exp(160/32)
 
 const alpha int = 3
 const valueK int = 20
@@ -50,8 +49,8 @@ const returnContacts = 3
 const returnHasValue = 4
 const returnTimedOut = 5
 
-func NewKademliaObject(RT *routingTable.RoutingTable, MBL *messageBufferList.MessageBufferList, MD *metadata.FileMetaData) *Kademlia {
-	instance := &Kademlia{nil, RT, MBL, MD}
+func NewKademliaObject(RT *routingTable.RoutingTable, MBL *messageBufferList.MessageBufferList, MD *FileMetaData) *Kademlia {
+	instance := &Kademlia{nil, RT, MBL, *MD}
 	storagePath, _ = filepath.Abs("../storage/")
 	downLoadPath, _ = filepath.Abs("../downloads/")
 
@@ -322,11 +321,13 @@ func (kademlia *Kademlia) lookupSubProcedure(target d7024e.Contact, toFind *d702
 }
 
 func (kademlia *Kademlia) LookupContact(target *d7024e.KademliaID) (closest []d7024e.Contact) {
+	fmt.Println("Looking up contact with id: ", target.String())
 	closest, _, _ = kademlia.lookupProcedure(procedureContacts, target)
 	return
 }
 
 func (kademlia *Kademlia) LookupData(id string) (filePath string, closest []d7024e.Contact, fileWasFound bool) {
+	fmt.Println("Trying to find file with id: ", id)
 	fileHash := d7024e.NewKademliaID(id)
 	if kademlia.MetaData.HasFile(id) {
 		return storagePath + "/" + id, nil, true
@@ -335,8 +336,15 @@ func (kademlia *Kademlia) LookupData(id string) (filePath string, closest []d702
 	if fileWasFound {
 		url := fileHost.Address + "/storage/" + id
 		filePath = downLoadPath + "/" + id
-		kademlia.network.FetchFile(url, filePath)
+		err := kademlia.network.FetchFile(url, filePath)
+		if err != nil {
+			fmt.Println(err)
+			fileWasFound = false
+			return
+		}
+		fmt.Printf("File with id: %s\nwas found\n", id)
 		if len(closest) > 0 {
+			fmt.Println("Caching file in node : ", closest[0].ID.String())
 			kademlia.sendStoreMessage(&closest[0], d7024e.NewRandomKademliaID(), fileHash, fileHost.Address)
 		}
 	}
@@ -361,7 +369,9 @@ func (kademlia *Kademlia) StoreFile(filePath string) string {
 
 	hash := h.Sum(nil)
 	newFileName := hex.EncodeToString(hash)
+	fmt.Println("Storing file with hash: ", newFileName)
 	if kademlia.MetaData.HasFile(newFileName) {
+		fmt.Printf("File with hash: %s\nalready stored on node.\n", newFileName)
 		return newFileName
 	}
 
@@ -388,10 +398,12 @@ func (kademlia *Kademlia) StoreFile(filePath string) string {
 	for _, c := range closest {
 		kademlia.sendStoreMessage(&c, d7024e.NewRandomKademliaID(), kademliaHash, rpc.SENDER)
 	}
+	fmt.Printf("File with hash: %s\nwas successfully stored\n", newFileName)
 	return newFileName
 }
 
 func (kademlia *Kademlia) Join(ip string, port int) bool {
+	fmt.Printf("Joining network on %s:%v\n", ip, port)
 	rt := kademlia.routingTable
 	bootstrapContact := d7024e.NewContact(d7024e.NewRandomKademliaID(), fmt.Sprintf("%s:%d", ip, port))
 
@@ -459,15 +471,17 @@ func (kademlia *Kademlia) addContact(contact *d7024e.Contact) {
 }
 
 func (kademlia *Kademlia) PinFile(fileHash string) bool {
+	fmt.Println("Pinning file with hash: ", fileHash)
 	return kademlia.MetaData.Pin(fileHash)
 }
 
 func (kademlia *Kademlia) UnpinFile(fileHash string) bool {
+	fmt.Println("Unpinning file with hash: ", fileHash)
 	return kademlia.MetaData.Unpin(fileHash)
 }
 
 func (kademlia *Kademlia) calcTimeToLive(fileId *d7024e.KademliaID) (ttl time.Duration) {
-	exponent := float64(kademlia.routingTable.GetBucketIndex(fileId))
+	exponent := float64(kademlia.routingTable.GetBucketIndex(fileId))/32.0
 	ttl = time.Duration(coefficentTTL * math.Exp(exponent))
 	return
 }

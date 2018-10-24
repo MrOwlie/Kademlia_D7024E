@@ -255,7 +255,6 @@ func (h *hub) Listen() {
 					} else {
 						response = []string{"fail", "Join attempt towards " + command[1] + " timed out"}
 					}
-					fmt.Println("Join attempt ended")
 
 				case command[0] == "store":
 					fmt.Println("Attempting to store file on network")
@@ -265,7 +264,6 @@ func (h *hub) Listen() {
 					} else {
 						response = []string{"fail", "Storing file failed"}
 					}
-					fmt.Println("Store attempt ended")
 
 				case command[0] == "cat":
 					fmt.Println("Attempting to fetch file ", command[1])
@@ -275,7 +273,6 @@ func (h *hub) Listen() {
 					} else {
 						response = []string{"fail", "File was not found"}
 					}
-					fmt.Println("Fetch attempt ended")
 
 				case command[0] == "pin":
 					fmt.Println("Attempting to pin file ", command[1])
@@ -284,7 +281,6 @@ func (h *hub) Listen() {
 					} else {
 						response = []string{"fail", "File was not found"}
 					}
-					fmt.Println("Pin attempt ended")
 
 				case command[0] == "unpin":
 					fmt.Println("Attempting to unpin file ", command[1])
@@ -293,7 +289,6 @@ func (h *hub) Listen() {
 					} else {
 						response = []string{"fail", "File was not found"}
 					}
-					fmt.Println("Unpin attempt ended")
 
 				default:
 					response = []string{"fail", "The command was unrecognized"}

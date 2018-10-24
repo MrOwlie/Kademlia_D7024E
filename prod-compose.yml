@@ -63,6 +63,19 @@ services:
       - "8081:80"
     networks:
       - kademlia_network
+
+  kademliaNodeExternal3:
+    image: kademlia:latest
+    stdin_open: true
+    tty: true
+    working_dir: /kademlia/bin
+    command: ./initialize 172.16.238.10 10000 10000
+    depends_on:
+      - "kademliaMain"
+    ports:
+      - "8082:80"
+    networks:
+      - kademlia_network
       
 networks:
   kademlia_network:
